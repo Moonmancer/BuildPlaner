@@ -24,6 +24,7 @@ import {
   type SkillEntry,
 } from './types'
 import { loadData, saveData } from './storage'
+import { getClass } from './ro/classes'
 
 function newId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -49,7 +50,7 @@ interface State {
 }
 
 type BuildContentPatch = Partial<
-  Pick<Build, 'name' | 'classId' | 'charLink' | 'notes'>
+  Pick<Build, 'name' | 'classId' | 'charLink' | 'notes' | 'earlyJobChangeLevel'>
 >
 
 type Action =
@@ -96,6 +97,7 @@ function newBuild(name: string): Build {
     charLink: '',
     notes: '',
     groupIds: [],
+    earlyJobChangeLevel: 50,
     milestones: [newMilestone()],
     createdAt: ts,
     updatedAt: ts,
@@ -206,9 +208,21 @@ function reducer(state: State, action: Action): State {
         ...b,
         groupIds: [...new Set(action.groupIds)],
       }))
-    case 'updateDraft':
+    case 'updateDraft': {
       if (!state.draft) return state
-      return { ...state, draft: { ...state.draft, ...action.patch }, dirty: true }
+      let next: Build = { ...state.draft, ...action.patch }
+      // Bei Klassenwechsel Job-Level aller Milestones auf das neue Max klammern.
+      if ('classId' in action.patch) {
+        const max = getClass(next.classId)?.maxJobLevel ?? 70
+        next = {
+          ...next,
+          milestones: next.milestones.map((m) =>
+            m.jobLevel > max ? { ...m, jobLevel: max } : m,
+          ),
+        }
+      }
+      return { ...state, draft: next, dirty: true }
+    }
     case 'addMilestone':
       return editDraftMilestones(state, (ms) => [...ms, newMilestone()])
     case 'deleteMilestone':

@@ -41,6 +41,8 @@ function migrateBuild(raw: unknown): Build {
     charLink: typeof b.charLink === 'string' ? b.charLink : '',
     notes: typeof b.notes === 'string' ? b.notes : '',
     groupIds,
+    earlyJobChangeLevel:
+      typeof b.earlyJobChangeLevel === 'number' ? b.earlyJobChangeLevel : 50,
     milestones: Array.isArray(b.milestones) ? (b.milestones as Build['milestones']) : [],
     createdAt: typeof b.createdAt === 'string' ? b.createdAt : new Date().toISOString(),
     updatedAt: typeof b.updatedAt === 'string' ? b.updatedAt : new Date().toISOString(),

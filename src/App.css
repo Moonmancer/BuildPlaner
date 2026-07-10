@@ -545,6 +545,25 @@ button:disabled {
   color: #e5484d;
   font-weight: 600;
 }
+.tag-rebirth {
+  color: var(--accent);
+  font-weight: 600;
+}
+.base-from-stats {
+  margin-top: 8px;
+}
+.hex-warn {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: #e5a23d;
+}
+.job-change {
+  display: block;
+  margin-top: 12px;
+}
+.job-change input {
+  max-width: 120px;
+}
 
 /* ---------- Skills ---------- */
 .skill-list {

@@ -6,6 +6,8 @@ import { useConfirm } from './ConfirmDialog'
 
 interface Props {
   milestone: Milestone
+  isRebirth: boolean
+  maxJobLevel: number
   dragging?: boolean
   onDragStart?: () => void
   onDragEnd?: () => void
@@ -15,6 +17,8 @@ interface Props {
 /** Ein einklappbarer Milestone: Label, Level, Stats und Skills. */
 export function MilestoneCard({
   milestone: m,
+  isRebirth,
+  maxJobLevel,
   dragging,
   onDragStart,
   onDragEnd,
@@ -80,15 +84,18 @@ export function MilestoneCard({
             />
           </label>
           <label>
-            <span>Job-Level</span>
+            <span>Job-Level (max {maxJobLevel})</span>
             <input
               type="number"
               min={1}
-              max={70}
+              max={maxJobLevel}
               value={m.jobLevel}
               onChange={(e) =>
                 patch({
-                  jobLevel: Math.max(1, Math.round(e.target.valueAsNumber || 1)),
+                  jobLevel: Math.min(
+                    maxJobLevel,
+                    Math.max(1, Math.round(e.target.valueAsNumber || 1)),
+                  ),
                 })
               }
             />
@@ -99,7 +106,9 @@ export function MilestoneCard({
         <StatsEditor
           stats={m.stats}
           baseLevel={m.baseLevel}
+          isRebirth={isRebirth}
           onChange={(stats) => patch({ stats })}
+          onSetBaseLevel={(level) => patch({ baseLevel: level })}
         />
 
         <h4>Skills</h4>

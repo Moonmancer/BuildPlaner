@@ -1,15 +1,32 @@
 import { STATS, type Stats, type StatKey } from '../types'
-import { MIN_STAT, MAX_STAT, statBudget, statRaiseCost } from '../ro/stats'
+import {
+  MIN_STAT,
+  MAX_STAT,
+  statBudget,
+  statRaiseCost,
+  minLevelForSpent,
+  hexagonViolations,
+} from '../ro/stats'
 
 interface Props {
   stats: Stats
   baseLevel: number
+  isRebirth: boolean
   onChange: (stats: Stats) => void
+  onSetBaseLevel: (level: number) => void
 }
 
 /** Editor für die sechs Grundattribute inkl. Pre-Renewal-Statuspunkt-Budget. */
-export function StatsEditor({ stats, baseLevel, onChange }: Props) {
-  const budget = statBudget(stats, baseLevel)
+export function StatsEditor({
+  stats,
+  baseLevel,
+  isRebirth,
+  onChange,
+  onSetBaseLevel,
+}: Props) {
+  const budget = statBudget(stats, baseLevel, isRebirth)
+  // Hexagon-Regel gilt nur für Nicht-Rebirth-Klassen.
+  const hexIssues = isRebirth ? [] : hexagonViolations(stats)
 
   function setStat(key: StatKey, value: number) {
     const v = Number.isFinite(value)
@@ -34,10 +51,7 @@ export function StatsEditor({ stats, baseLevel, onChange }: Props) {
                 value={value}
                 onChange={(e) => setStat(key, e.target.valueAsNumber)}
               />
-              <span
-                className="stat-cost"
-                title="Kosten für den nächsten Punkt"
-              >
+              <span className="stat-cost" title="Kosten für den nächsten Punkt">
                 {nextCost === null ? 'max' : `+${nextCost}`}
               </span>
             </label>
@@ -57,6 +71,7 @@ export function StatsEditor({ stats, baseLevel, onChange }: Props) {
         <div className="budget-text">
           <span>
             Statuspunkte: <strong>{budget.spent}</strong> / {budget.available}
+            {isRebirth && <span className="tag-rebirth"> Rebirth</span>}
           </span>
           {budget.overBudget ? (
             <span className="over-text">
@@ -66,7 +81,22 @@ export function StatsEditor({ stats, baseLevel, onChange }: Props) {
             <span className="ok-text">{budget.remaining} übrig</span>
           )}
         </div>
+        <button
+          type="button"
+          className="ghost small base-from-stats"
+          title="Setzt das Base-Level auf das Minimum, das diese Stats erlaubt"
+          onClick={() => onSetBaseLevel(minLevelForSpent(budget.spent, isRebirth))}
+        >
+          Base-Level aus Stats
+        </button>
       </div>
+
+      {hexIssues.length > 0 && (
+        <p className="hex-warn">
+          ⚠ Hexagon-Regel: {hexIssues.map(([a, b]) => `${a}+${b}`).join(', ')}{' '}
+          sollten je ≥ 10 sein.
+        </p>
+      )}
     </div>
   )
 }

@@ -34,6 +34,9 @@ export interface Build {
   notes: string
   /** Zugehörige Gruppen (BuildGroup.id). Ein Build kann in mehreren Gruppen sein. */
   groupIds: string[]
+  /** Job-Level, bei dem von First- zu Second-Class gewechselt wurde (40–50).
+   *  Begrenzt die verfügbaren First-Class-Skillpunkte (relevant ab Phase 3c). */
+  earlyJobChangeLevel: number
   milestones: Milestone[]
   createdAt: string
   updatedAt: string

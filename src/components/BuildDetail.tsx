@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import { MilestoneCard } from './MilestoneCard'
 import { ClassSelect } from './ClassSelect'
 import { orderedGroups } from '../groupTree'
+import { getClass } from '../ro/classes'
 
 /** Findet http/https-URLs in einem Text (für anklickbare Notiz-Links). */
 function extractUrls(text: string): string[] {
@@ -37,6 +38,11 @@ export function BuildDetail() {
 
   const b = draft
   const noteUrls = extractUrls(b.notes)
+  const cls = getClass(b.classId)
+  const isRebirth = cls?.isRebirth ?? false
+  const maxJobLevel = cls?.maxJobLevel ?? 70
+  // Vorzeitiger Job-Wechsel nur für Klassen mit First-Class-Vergangenheit relevant.
+  const showJobChange = cls?.tier === 'second' || cls?.tier === 'transcendent'
 
   function onDropOnMilestone(targetId: string) {
     if (!msDragId || msDragId === targetId) return
@@ -132,6 +138,26 @@ export function BuildDetail() {
         </div>
       </label>
 
+      {showJobChange && (
+        <label className="job-change">
+          <span>1st→2nd Job-Wechsel bei Job-Level (40–50)</span>
+          <input
+            type="number"
+            min={40}
+            max={50}
+            value={b.earlyJobChangeLevel}
+            onChange={(e) =>
+              updateDraft({
+                earlyJobChangeLevel: Math.min(
+                  50,
+                  Math.max(40, Math.round(e.target.valueAsNumber || 50)),
+                ),
+              })
+            }
+          />
+        </label>
+      )}
+
       <label className="notes">
         <span>Notizen</span>
         <textarea
@@ -169,6 +195,8 @@ export function BuildDetail() {
           <MilestoneCard
             key={m.id}
             milestone={m}
+            isRebirth={isRebirth}
+            maxJobLevel={maxJobLevel}
             dragging={msDragId === m.id}
             onDragStart={() => setMsDragId(m.id)}
             onDragEnd={() => setMsDragId(null)}
