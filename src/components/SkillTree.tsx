@@ -6,7 +6,6 @@ import {
   dependentsBlocking,
   skillPoints,
   learnSkill,
-  getSkill,
   isPlatinum,
   type SkillDef,
   type PoolInfo,
@@ -30,6 +29,10 @@ export function SkillTree({
 }: Props) {
   const [view, setView] = useState<'list' | 'tree'>('list')
   const available = useMemo(() => skillsForClass(classId), [classId])
+  const availById = useMemo(
+    () => new Map(available.map((s) => [s.id, s])),
+    [available],
+  )
   const points = skillPoints(classId, levels, earlyJobChangeLevel)
 
   if (!classId) {
@@ -48,8 +51,9 @@ export function SkillTree({
     const cache = new Map<string, number>()
     function d(id: string): number {
       if (cache.has(id)) return cache.get(id)!
-      const s = getSkill(id)
-      const req = s?.requires.filter((r) => available.some((a) => a.id === r.id)) ?? []
+      cache.set(id, 0) // Zyklusschutz
+      const s = availById.get(id)
+      const req = s?.requires.filter((r) => availById.has(r.id)) ?? []
       const val = req.length === 0 ? 0 : 1 + Math.max(...req.map((r) => d(r.id)))
       cache.set(id, val)
       return val
@@ -59,7 +63,7 @@ export function SkillTree({
 
   function raise(skill: SkillDef, level: number) {
     // Auto-Lernen: benötigte Vor-Skills werden mit hochgezogen.
-    onChange(learnSkill(levels, skill.id, level))
+    onChange(learnSkill(levels, skill.id, level, available))
   }
 
   function lower(skill: SkillDef, level: number) {
