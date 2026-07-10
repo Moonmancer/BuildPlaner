@@ -195,8 +195,10 @@ export function BuildDetail() {
           <MilestoneCard
             key={m.id}
             milestone={m}
+            classId={b.classId}
             isRebirth={isRebirth}
             maxJobLevel={maxJobLevel}
+            earlyJobChangeLevel={b.earlyJobChangeLevel}
             dragging={msDragId === m.id}
             onDragStart={() => setMsDragId(m.id)}
             onDragEnd={() => setMsDragId(null)}

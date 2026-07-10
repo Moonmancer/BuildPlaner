@@ -1,13 +1,15 @@
 import { useStore } from '../store'
 import type { Milestone } from '../types'
 import { StatsEditor } from './StatsEditor'
-import { SkillList } from './SkillList'
+import { SkillTree } from './SkillTree'
 import { useConfirm } from './ConfirmDialog'
 
 interface Props {
   milestone: Milestone
+  classId: string | null
   isRebirth: boolean
   maxJobLevel: number
+  earlyJobChangeLevel: number
   dragging?: boolean
   onDragStart?: () => void
   onDragEnd?: () => void
@@ -17,8 +19,10 @@ interface Props {
 /** Ein einklappbarer Milestone: Label, Level, Stats und Skills. */
 export function MilestoneCard({
   milestone: m,
+  classId,
   isRebirth,
   maxJobLevel,
+  earlyJobChangeLevel,
   dragging,
   onDragStart,
   onDragEnd,
@@ -112,7 +116,12 @@ export function MilestoneCard({
         />
 
         <h4>Skills</h4>
-        <SkillList skills={m.skills} onChange={(skills) => patch({ skills })} />
+        <SkillTree
+          classId={classId}
+          levels={m.skills}
+          earlyJobChangeLevel={earlyJobChangeLevel}
+          onChange={(skills) => patch({ skills })}
+        />
 
         <div className="ms-actions">
           <button

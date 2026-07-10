@@ -21,7 +21,6 @@ import {
   type Build,
   type BuildGroup,
   type Milestone,
-  type SkillEntry,
 } from './types'
 import { loadData, saveData } from './storage'
 import { getClass } from './ro/classes'
@@ -84,7 +83,7 @@ function newMilestone(): Milestone {
     baseLevel: 1,
     jobLevel: 1,
     stats: emptyStats(),
-    skills: [],
+    skills: {},
   }
 }
 
@@ -373,7 +372,6 @@ interface Store {
   setGroupParent: (groupId: string, parentId: string | null) => void
   toggleGroupCollapsed: (groupId: string) => void
   deleteGroup: (groupId: string) => void
-  newSkill: () => SkillEntry
 }
 
 const StoreContext = createContext<Store | null>(null)
@@ -422,7 +420,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toggleGroupCollapsed: (groupId) =>
         dispatch({ type: 'toggleGroupCollapsed', groupId }),
       deleteGroup: (groupId) => dispatch({ type: 'deleteGroup', groupId }),
-      newSkill: () => ({ id: newId(), name: '', level: 1 }),
     }),
     [state],
   )

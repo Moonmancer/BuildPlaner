@@ -1,0 +1,174 @@
+import { useMemo, useState } from 'react'
+import type { SkillLevels } from '../types'
+import { getClass } from '../ro/classes'
+import {
+  skillsForClass,
+  prereqsMet,
+  dependentsBlocking,
+  skillPoints,
+  getSkill,
+  type SkillDef,
+} from '../ro/skills'
+
+interface Props {
+  classId: string | null
+  levels: SkillLevels
+  earlyJobChangeLevel: number
+  onChange: (levels: SkillLevels) => void
+}
+
+/** Skill-Baum eines Builds: umschaltbar zwischen Listen- und Baum-Ansicht.
+ *  Prüft Voraussetzungen, Max-Level und Skillpunkt-Budget (1 Job-Level je Punkt). */
+export function SkillTree({
+  classId,
+  levels,
+  earlyJobChangeLevel,
+  onChange,
+}: Props) {
+  const [view, setView] = useState<'list' | 'tree'>('list')
+  const available = useMemo(() => skillsForClass(classId), [classId])
+  const points = skillPoints(classId, levels, earlyJobChangeLevel)
+
+  if (!classId) {
+    return <p className="empty small">Erst eine Klasse wählen.</p>
+  }
+  if (available.length === 0) {
+    return (
+      <p className="empty small">
+        Für diese Klasse sind noch keine Skill-Daten hinterlegt.
+      </p>
+    )
+  }
+
+  // Tiefe eines Skills anhand seiner Voraussetzungen (für die Baum-Einrückung).
+  const depthOf = (() => {
+    const cache = new Map<string, number>()
+    function d(id: string): number {
+      if (cache.has(id)) return cache.get(id)!
+      const s = getSkill(id)
+      const req = s?.requires.filter((r) => available.some((a) => a.id === r.id)) ?? []
+      const val = req.length === 0 ? 0 : 1 + Math.max(...req.map((r) => d(r.id)))
+      cache.set(id, val)
+      return val
+    }
+    return d
+  })()
+
+  function poolFull(skill: SkillDef): boolean {
+    const pool = getClass(skill.classId)?.tier
+    const isFirst = pool === 'novice' || pool === 'first'
+    const p = isFirst ? points.first : points.second
+    return p.spent >= p.cap
+  }
+
+  function setLevel(skill: SkillDef, level: number) {
+    const clamped = Math.max(0, Math.min(skill.maxLevel, level))
+    const next = { ...levels }
+    if (clamped <= 0) delete next[skill.id]
+    else next[skill.id] = clamped
+    onChange(next)
+  }
+
+  function SkillRow({ skill }: { skill: SkillDef }) {
+    const level = levels[skill.id] ?? 0
+    const locked = !prereqsMet(skill, levels)
+    const blockers = dependentsBlocking(skill, level - 1, levels, available)
+    const canInc = !locked && level < skill.maxLevel && !poolFull(skill)
+    const canDec = level > 0 && blockers.length === 0
+    return (
+      <div className={`skill-row2${locked ? ' locked' : ''}${level > 0 ? ' active' : ''}`}>
+        <span className="skill-nm">{skill.name}</span>
+        <div className="skill-stepper">
+          <button
+            type="button"
+            disabled={!canDec}
+            onClick={() => setLevel(skill, level - 1)}
+            aria-label={`${skill.name} verringern`}
+          >
+            −
+          </button>
+          <span className="skill-lvl">
+            {level}/{skill.maxLevel}
+          </span>
+          <button
+            type="button"
+            disabled={!canInc}
+            onClick={() => setLevel(skill, level + 1)}
+            aria-label={`${skill.name} erhöhen`}
+          >
+            +
+          </button>
+        </div>
+        {locked && (
+          <span className="skill-req">
+            benötigt{' '}
+            {skill.requires
+              .map((r) => `${getSkill(r.id)?.name ?? r.id} Lv${r.level}`)
+              .join(', ')}
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  // Skills nach Klasse (Tier) gruppieren – Reihenfolge wie in der Vererbungskette.
+  const byClass = new Map<string, SkillDef[]>()
+  for (const s of available) {
+    const arr = byClass.get(s.classId) ?? []
+    arr.push(s)
+    byClass.set(s.classId, arr)
+  }
+
+  return (
+    <div className="skilltree">
+      <div className="skill-head">
+        <div className="skill-budgets">
+          <span className={points.first.spent > points.first.cap ? 'over-text' : ''}>
+            First-Class: {points.first.spent}/{points.first.cap}
+          </span>
+          {points.second.cap > 0 && (
+            <span className={points.second.spent > points.second.cap ? 'over-text' : ''}>
+              Second-Class: {points.second.spent}/{points.second.cap}
+            </span>
+          )}
+        </div>
+        <div className="view-toggle">
+          <button
+            type="button"
+            className={view === 'list' ? 'active' : ''}
+            onClick={() => setView('list')}
+          >
+            Liste
+          </button>
+          <button
+            type="button"
+            className={view === 'tree' ? 'active' : ''}
+            onClick={() => setView('tree')}
+          >
+            Baum
+          </button>
+        </div>
+      </div>
+
+      {[...byClass.entries()].map(([cid, skills]) => (
+        <div key={cid} className="skill-group">
+          <h5>{getClass(cid)?.name ?? cid}</h5>
+          {view === 'list'
+            ? skills.map((s) => <SkillRow key={s.id} skill={s} />)
+            : [...skills]
+                .sort((a, b) => depthOf(a.id) - depthOf(b.id))
+                .map((s) => (
+                  <div
+                    key={s.id}
+                    className="tree-node"
+                    style={{ marginLeft: depthOf(s.id) * 18 }}
+                  >
+                    {depthOf(s.id) > 0 && <span className="tree-branch">└ </span>}
+                    <SkillRow skill={s} />
+                  </div>
+                ))}
+        </div>
+      ))}
+    </div>
+  )
+}

@@ -6,6 +6,7 @@ import {
   type AppData,
   type Build,
   type BuildGroup,
+  type Milestone,
 } from './types'
 import { CLASSES } from './ro/classes'
 
@@ -43,9 +44,39 @@ function migrateBuild(raw: unknown): Build {
     groupIds,
     earlyJobChangeLevel:
       typeof b.earlyJobChangeLevel === 'number' ? b.earlyJobChangeLevel : 50,
-    milestones: Array.isArray(b.milestones) ? (b.milestones as Build['milestones']) : [],
+    milestones: Array.isArray(b.milestones)
+      ? b.milestones.map(migrateMilestone)
+      : [],
     createdAt: typeof b.createdAt === 'string' ? b.createdAt : new Date().toISOString(),
     updatedAt: typeof b.updatedAt === 'string' ? b.updatedAt : new Date().toISOString(),
+  }
+}
+
+/** Normalisiert einen Milestone. `skills` war früher eine Freitext-Liste
+ *  (SkillEntry[]); jetzt ein Objekt skillId->level. Alte Listen werden verworfen. */
+function migrateMilestone(raw: unknown): Milestone {
+  const m = (raw ?? {}) as Record<string, unknown>
+  let skills: Record<string, number> = {}
+  if (m.skills && !Array.isArray(m.skills) && typeof m.skills === 'object') {
+    for (const [k, v] of Object.entries(m.skills as Record<string, unknown>)) {
+      if (typeof v === 'number') skills[k] = v
+    }
+  }
+  const stats = (m.stats ?? {}) as Record<string, unknown>
+  return {
+    id: typeof m.id === 'string' ? m.id : Math.random().toString(36).slice(2),
+    label: typeof m.label === 'string' ? m.label : 'Milestone',
+    baseLevel: typeof m.baseLevel === 'number' ? m.baseLevel : 1,
+    jobLevel: typeof m.jobLevel === 'number' ? m.jobLevel : 1,
+    stats: {
+      STR: Number(stats.STR) || 1,
+      AGI: Number(stats.AGI) || 1,
+      VIT: Number(stats.VIT) || 1,
+      INT: Number(stats.INT) || 1,
+      DEX: Number(stats.DEX) || 1,
+      LUK: Number(stats.LUK) || 1,
+    },
+    skills,
   }
 }
 
