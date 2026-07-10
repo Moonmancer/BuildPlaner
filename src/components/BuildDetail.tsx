@@ -1,5 +1,6 @@
 import { useStore } from '../store'
 import { MilestoneCard } from './MilestoneCard'
+import { ClassSelect } from './ClassSelect'
 
 /** Rechte Spalte: Details des ausgewählten Builds inkl. seiner Milestones. */
 export function BuildDetail() {
@@ -29,11 +30,9 @@ export function BuildDetail() {
         </label>
         <label>
           <span>Klasse</span>
-          <input
-            type="text"
-            value={b.jobClass}
-            placeholder="z.B. Knight (Phase 3: Auswahl)"
-            onChange={(e) => updateBuild(b.id, { jobClass: e.target.value })}
+          <ClassSelect
+            value={b.classId}
+            onChange={(classId) => updateBuild(b.id, { classId })}
           />
         </label>
       </div>

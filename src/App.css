@@ -287,6 +287,82 @@
   margin-top: 2px;
 }
 
+/* ---------- Klassen-Combobox ---------- */
+.class-select {
+  position: relative;
+}
+.class-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--text);
+  opacity: 0.5;
+  padding: 2px 6px;
+  font-size: 0.85rem;
+}
+.class-clear:hover {
+  opacity: 1;
+  background: transparent;
+  filter: none;
+}
+.class-listbox {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.class-listbox ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.class-group-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.5;
+  padding: 8px 8px 3px;
+}
+.class-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.class-option.active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.class-option.selected {
+  font-weight: 600;
+  color: var(--text-h);
+}
+.class-opt-meta {
+  font-size: 0.72rem;
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+}
+.class-empty {
+  padding: 10px 8px;
+  opacity: 0.6;
+  font-size: 0.88rem;
+}
+
 /* ---------- Form-Elemente ---------- */
 label.grow {
   flex: 1;

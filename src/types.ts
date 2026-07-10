@@ -27,8 +27,8 @@ export interface Milestone {
 export interface Build {
   id: string
   name: string
-  /** Job-Klasse; Phase 2 als Freitext, Phase 3 als Auswahl aus dem Klassenbaum. */
-  jobClass: string
+  /** Klassen-ID aus der Registry (src/ro/classes.ts) oder null, wenn keine gewählt. */
+  classId: string | null
   notes: string
   milestones: Milestone[]
   createdAt: string

@@ -40,7 +40,7 @@ type Action =
   | {
       type: 'updateBuild'
       buildId: string
-      patch: Partial<Pick<Build, 'name' | 'jobClass' | 'notes'>>
+      patch: Partial<Pick<Build, 'name' | 'classId' | 'notes'>>
     }
   | { type: 'addMilestone'; buildId: string }
   | { type: 'deleteMilestone'; buildId: string; milestoneId: string }
@@ -83,7 +83,7 @@ function reducer(state: State, action: Action): State {
       const build: Build = {
         id: newId(),
         name: action.name.trim() || 'Neuer Build',
-        jobClass: '',
+        classId: null,
         notes: '',
         milestones: [],
         createdAt: ts,
@@ -143,7 +143,7 @@ interface Store {
   selectBuild: (buildId: string | null) => void
   updateBuild: (
     buildId: string,
-    patch: Partial<Pick<Build, 'name' | 'jobClass' | 'notes'>>,
+    patch: Partial<Pick<Build, 'name' | 'classId' | 'notes'>>,
   ) => void
   addMilestone: (buildId: string) => void
   deleteMilestone: (buildId: string, milestoneId: string) => void

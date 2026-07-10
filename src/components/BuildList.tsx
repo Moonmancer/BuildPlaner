@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useStore } from '../store'
+import { getClass } from '../ro/classes'
 
 /** Linke Spalte: alle Builds, auswählen, anlegen, löschen. */
 export function BuildList() {
@@ -43,7 +44,8 @@ export function BuildList() {
               >
                 <span className="build-name">{b.name}</span>
                 <span className="build-meta">
-                  {b.jobClass || 'ohne Klasse'} · {b.milestones.length} Milestone
+                  {getClass(b.classId)?.name ?? 'ohne Klasse'} ·{' '}
+                  {b.milestones.length} Milestone
                   {b.milestones.length === 1 ? '' : 's'}
                 </span>
               </button>
