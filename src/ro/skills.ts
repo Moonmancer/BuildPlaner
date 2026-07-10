@@ -118,6 +118,34 @@ export function getSkill(id: string): SkillDef | undefined {
   return SKILL_BY_ID[id]
 }
 
+/** Platin-/Quest-Skills: werden per Quest gelernt und kosten KEINE Skillpunkte.
+ *  (Klassische Pre-Renewal-Platinum-Skills der First Classes + Novice-Quest-Skills.) */
+const PLATINUM_SKILLS = new Set<string>([
+  'NV_FIRSTAID',
+  'NV_TRICKDEAD',
+  'SM_MOVINGRECOVERY',
+  'SM_FATALBLOW',
+  'SM_AUTOBERSERK',
+  'MG_ENERGYCOAT',
+  'AC_MAKINGARROW',
+  'AC_CHARGEARROW',
+  'AL_HOLYLIGHT',
+  'MC_CARTREVOLUTION',
+  'MC_CHANGECART',
+  'MC_LOUD',
+  'MC_CARTDECORATE',
+  'ALL_BUYING_STORE',
+  'TF_SPRINKLESAND',
+  'TF_BACKSLIDING',
+  'TF_PICKSTONE',
+  'TF_THROWSTONE',
+])
+
+/** Ob ein Skill ein Platin-/Quest-Skill ist (kostet keinen Skillpunkt). */
+export function isPlatinum(id: string): boolean {
+  return PLATINUM_SKILLS.has(id)
+}
+
 /** Alle für eine Klasse verfügbaren Skills: eigene + geerbte (via Vererbungskette).
  *  Von Vorgängerklassen werden nur vererbbare Skills übernommen. */
 export function skillsForClass(classId: string | null | undefined): SkillDef[] {
@@ -215,6 +243,7 @@ export function skillPoints(
   for (const s of available) {
     const lvl = levels[s.id] ?? 0
     if (lvl <= 0) continue
+    if (isPlatinum(s.id)) continue // Platin-/Quest-Skills kosten keinen Punkt
     const pool = skillPool(s)
     if (pool === 'novice') noviceSpent += lvl
     else if (pool === 'first') firstSpent += lvl

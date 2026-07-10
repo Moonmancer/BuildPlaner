@@ -6,6 +6,6 @@ shell: powershell
 
 Ergebnis des Produktions-Builds (`tsc -b && vite build`):
 
-!`$env:Path = "C:\Program Files\nodejs;$env:Path"; Set-Location "F:\Dev\BuildPlaner"; npm run build 2>&1 | Select-Object -Last 25`
+!`Set-Location 'F:\Dev\BuildPlaner'; npm run build 2>&1 | Select-Object -Last 25`
 
 Bewerte die Ausgabe: Steht dort `✓ built in …`, war der Build erfolgreich. Bei TypeScript- oder Vite-Fehlern die Fehlermeldungen analysieren und beheben.

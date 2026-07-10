@@ -7,6 +7,7 @@ import {
   skillPoints,
   learnSkill,
   getSkill,
+  isPlatinum,
   type SkillDef,
   type PoolInfo,
 } from '../ro/skills'
@@ -77,7 +78,14 @@ export function SkillTree({
     const canDec = level > 0 && blockers.length === 0
     return (
       <div className={`skill-row2${level > 0 ? ' active' : ''}`}>
-        <span className="skill-nm">{skill.name}</span>
+        <span className="skill-nm">
+          {skill.name}
+          {isPlatinum(skill.id) && (
+            <span className="skill-quest" title="Platin-/Quest-Skill – kostet keinen Skillpunkt">
+              Quest
+            </span>
+          )}
+        </span>
         <div className="skill-stepper">
           <button
             type="button"
