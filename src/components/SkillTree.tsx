@@ -3,11 +3,12 @@ import type { SkillLevels } from '../types'
 import { getClass } from '../ro/classes'
 import {
   skillsForClass,
-  prereqsMet,
   dependentsBlocking,
   skillPoints,
+  learnSkill,
   getSkill,
   type SkillDef,
+  type PoolInfo,
 } from '../ro/skills'
 
 interface Props {
@@ -18,7 +19,8 @@ interface Props {
 }
 
 /** Skill-Baum eines Builds: umschaltbar zwischen Listen- und Baum-Ansicht.
- *  Prüft Voraussetzungen, Max-Level und Skillpunkt-Budget (1 Job-Level je Punkt). */
+ *  Beim Erhöhen werden benötigte Vor-Skills automatisch mitgelernt.
+ *  Skillpunkt-Budget je Tier (Novice / First / Second), 1 Job-Level je Punkt. */
 export function SkillTree({
   classId,
   levels,
@@ -54,15 +56,13 @@ export function SkillTree({
     return d
   })()
 
-  function poolFull(skill: SkillDef): boolean {
-    const pool = getClass(skill.classId)?.tier
-    const isFirst = pool === 'novice' || pool === 'first'
-    const p = isFirst ? points.first : points.second
-    return p.spent >= p.cap
+  function raise(skill: SkillDef, level: number) {
+    // Auto-Lernen: benötigte Vor-Skills werden mit hochgezogen.
+    onChange(learnSkill(levels, skill.id, level))
   }
 
-  function setLevel(skill: SkillDef, level: number) {
-    const clamped = Math.max(0, Math.min(skill.maxLevel, level))
+  function lower(skill: SkillDef, level: number) {
+    const clamped = Math.max(0, level)
     const next = { ...levels }
     if (clamped <= 0) delete next[skill.id]
     else next[skill.id] = clamped
@@ -71,18 +71,18 @@ export function SkillTree({
 
   function SkillRow({ skill }: { skill: SkillDef }) {
     const level = levels[skill.id] ?? 0
-    const locked = !prereqsMet(skill, levels)
+    // Herunterstufen blockieren, wenn ein aktiver Folge-Skill dieses Level braucht.
     const blockers = dependentsBlocking(skill, level - 1, levels, available)
-    const canInc = !locked && level < skill.maxLevel && !poolFull(skill)
+    const canInc = level < skill.maxLevel
     const canDec = level > 0 && blockers.length === 0
     return (
-      <div className={`skill-row2${locked ? ' locked' : ''}${level > 0 ? ' active' : ''}`}>
+      <div className={`skill-row2${level > 0 ? ' active' : ''}`}>
         <span className="skill-nm">{skill.name}</span>
         <div className="skill-stepper">
           <button
             type="button"
             disabled={!canDec}
-            onClick={() => setLevel(skill, level - 1)}
+            onClick={() => lower(skill, level - 1)}
             aria-label={`${skill.name} verringern`}
           >
             −
@@ -93,20 +93,12 @@ export function SkillTree({
           <button
             type="button"
             disabled={!canInc}
-            onClick={() => setLevel(skill, level + 1)}
+            onClick={() => raise(skill, level + 1)}
             aria-label={`${skill.name} erhöhen`}
           >
             +
           </button>
         </div>
-        {locked && (
-          <span className="skill-req">
-            benötigt{' '}
-            {skill.requires
-              .map((r) => `${getSkill(r.id)?.name ?? r.id} Lv${r.level}`)
-              .join(', ')}
-          </span>
-        )}
       </div>
     )
   }
@@ -119,18 +111,26 @@ export function SkillTree({
     byClass.set(s.classId, arr)
   }
 
+  const pools: { key: string; label: string; info: PoolInfo }[] = [
+    { key: 'novice', label: 'Novice', info: points.novice },
+    { key: 'first', label: 'First-Class', info: points.first },
+    { key: 'second', label: 'Second-Class', info: points.second },
+  ]
+
   return (
     <div className="skilltree">
       <div className="skill-head">
         <div className="skill-budgets">
-          <span className={points.first.spent > points.first.cap ? 'over-text' : ''}>
-            First-Class: {points.first.spent}/{points.first.cap}
-          </span>
-          {points.second.cap > 0 && (
-            <span className={points.second.spent > points.second.cap ? 'over-text' : ''}>
-              Second-Class: {points.second.spent}/{points.second.cap}
-            </span>
-          )}
+          {pools
+            .filter((p) => p.info.cap > 0 || p.info.spent > 0)
+            .map((p) => (
+              <span
+                key={p.key}
+                className={p.info.spent > p.info.cap ? 'over-text' : ''}
+              >
+                {p.label}: {p.info.spent}/{p.info.cap}
+              </span>
+            ))}
         </div>
         <div className="view-toggle">
           <button

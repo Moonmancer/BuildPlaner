@@ -133,16 +133,43 @@ export function skillsForClass(classId: string | null | undefined): SkillDef[] {
   })
 }
 
-/** Skillpunkt-„Topf" eines Skills: First-Tier (Novice/First-Class) oder Second-Tier
- *  (Second/Transcendent/Expanded). Bestimmt die getrennten Job-Level-Budgets. */
-export function skillPool(skill: SkillDef): 'first' | 'second' {
+export type SkillPool = 'novice' | 'first' | 'second'
+
+/** Skillpunkt-„Topf" eines Skills. Novice ist ein EIGENER Topf (Novice ist die
+ *  gemeinsame Wurzel für Super Novice, die First Classes und Taekwon/Ninja/Gunslinger).
+ *  First = First-Class, Second = Second/Transcendent/Expanded. */
+export function skillPool(skill: SkillDef): SkillPool {
   const tier = getClass(skill.classId)?.tier
-  return tier === 'novice' || tier === 'first' ? 'first' : 'second'
+  if (tier === 'novice') return 'novice'
+  if (tier === 'first') return 'first'
+  return 'second'
 }
 
 /** Ob die Voraussetzungen eines Skills bei gegebener Belegung erfüllt sind. */
 export function prereqsMet(skill: SkillDef, levels: SkillLevels): boolean {
   return skill.requires.every((r) => (levels[r.id] ?? 0) >= r.level)
+}
+
+/** Lernt einen Skill auf `targetLevel` und lernt dabei ALLE benötigten Vor-Skills
+ *  rekursiv auf ihr Mindestlevel mit. Liefert eine neue Belegung. */
+export function learnSkill(
+  levels: SkillLevels,
+  skillId: string,
+  targetLevel: number,
+): SkillLevels {
+  const next: SkillLevels = { ...levels }
+  const seen = new Set<string>()
+  function ensure(id: string, lvl: number) {
+    const s = getSkill(id)
+    if (!s) return
+    const want = Math.max(next[id] ?? 0, Math.min(lvl, s.maxLevel))
+    next[id] = want
+    if (seen.has(id)) return
+    seen.add(id)
+    for (const r of s.requires) ensure(r.id, r.level)
+  }
+  ensure(skillId, targetLevel)
+  return next
 }
 
 /** Skills, die diesen Skill als Voraussetzung haben und aktuell noch belegt sind
@@ -160,14 +187,20 @@ export function dependentsBlocking(
   )
 }
 
+export interface PoolInfo {
+  spent: number
+  cap: number
+}
 export interface SkillPoints {
-  first: { spent: number; cap: number }
-  second: { spent: number; cap: number }
+  novice: PoolInfo
+  first: PoolInfo
+  second: PoolInfo
 }
 
 /** Verteilte Skillpunkte je Tier + Kapazität (1 Job-Level je Skillpunkt).
+ *  Novice ist ein eigener Topf (Cap = Novice-Max-Joblevel).
  *  First-Cap = bei Second/Transcendent der earlyJobChange-Wert, sonst Max-Joblevel
- *  der First-Class-Ebene (bzw. der Klasse selbst). Second-Cap = Max-Joblevel der Klasse. */
+ *  der First-Class-Ebene. Second-Cap = Max-Joblevel der Klasse. */
 export function skillPoints(
   classId: string | null | undefined,
   levels: SkillLevels,
@@ -176,22 +209,27 @@ export function skillPoints(
   const chain = classChain(classId)
   const cls = chain[chain.length - 1]
   const available = skillsForClass(classId)
+  let noviceSpent = 0
   let firstSpent = 0
   let secondSpent = 0
   for (const s of available) {
     const lvl = levels[s.id] ?? 0
     if (lvl <= 0) continue
-    if (skillPool(s) === 'first') firstSpent += lvl
+    const pool = skillPool(s)
+    if (pool === 'novice') noviceSpent += lvl
+    else if (pool === 'first') firstSpent += lvl
     else secondSpent += lvl
   }
+  const noviceClass = chain.find((c) => c.tier === 'novice')
   const firstAncestor = chain.find((c) => c.tier === 'first')
   const isAdvanced = cls?.tier === 'second' || cls?.tier === 'transcendent'
   const firstCap = isAdvanced
     ? earlyJobChangeLevel
-    : (firstAncestor?.maxJobLevel ?? cls?.maxJobLevel ?? 0)
+    : (firstAncestor?.maxJobLevel ?? 0)
   const secondCap =
     cls && cls.tier !== 'novice' && cls.tier !== 'first' ? cls.maxJobLevel : 0
   return {
+    novice: { spent: noviceSpent, cap: noviceClass?.maxJobLevel ?? 0 },
     first: { spent: firstSpent, cap: firstCap },
     second: { spent: secondSpent, cap: secondCap },
   }
