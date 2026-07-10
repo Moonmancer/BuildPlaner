@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../store'
 import { MilestoneCard } from './MilestoneCard'
 import { ClassSelect } from './ClassSelect'
+import { orderedGroups } from '../groupTree'
 
 /** Findet http/https-URLs in einem Text (für anklickbare Notiz-Links). */
 function extractUrls(text: string): string[] {
@@ -16,8 +17,9 @@ export function BuildDetail() {
     draft,
     dirty,
     groups,
+    selectedBuild,
     updateDraft,
-    setBuildGroup,
+    toggleBuildGroup,
     addMilestone,
     reorderMilestones,
     saveDraft,
@@ -82,21 +84,32 @@ export function BuildDetail() {
             onChange={(classId) => updateDraft({ classId })}
           />
         </label>
-        <label>
-          <span>Gruppe</span>
-          <select
-            value={b.groupId ?? ''}
-            onChange={(e) => setBuildGroup(b.id, e.target.value || null)}
-          >
-            <option value="">— ohne Gruppe —</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
+
+      {groups.length > 0 && (
+        <div className="groups-field">
+          <span className="field-label">Gruppen</span>
+          <div className="group-checks">
+            {orderedGroups(groups).map(({ group, depth }) => {
+              const checked = selectedBuild?.groupIds.includes(group.id) ?? false
+              return (
+                <label
+                  key={group.id}
+                  className="group-check"
+                  style={{ paddingLeft: `${depth * 16}px` }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleBuildGroup(b.id, group.id)}
+                  />
+                  {group.name}
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <label className="char-link">
         <span>Link zum Char</span>

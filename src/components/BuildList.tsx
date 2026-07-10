@@ -1,10 +1,12 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { useStore } from '../store'
 import { getClass } from '../ro/classes'
+import { childrenOf } from '../groupTree'
 import { useConfirm, useConfirmChoice } from './ConfirmDialog'
 import type { Build, BuildGroup } from '../types'
 
-/** Linke Spalte: Builds anlegen, filtern, gruppieren, per Drag&Drop sortieren. */
+/** Linke Spalte: Builds anlegen, filtern, in (verschachtelte) Gruppen einordnen,
+ *  per Drag&Drop sortieren. Ein Build kann in mehreren Gruppen sein. */
 export function BuildList() {
   const {
     builds,
@@ -15,10 +17,11 @@ export function BuildList() {
     createBuild,
     createGroup,
     renameGroup,
+    setGroupParent,
     deleteGroup,
     selectBuild,
     saveDraft,
-    setBuildGroup,
+    setBuildGroups,
     reorderBuilds,
   } = useStore()
   const confirm = useConfirm()
@@ -41,7 +44,6 @@ export function BuildList() {
     [builds, q],
   )
 
-  /** Prüft vor dem Verlassen des aktuellen Builds auf ungespeicherte Änderungen. */
   async function guard(): Promise<boolean> {
     if (!dirty) return true
     const c = await confirmChoice({
@@ -53,7 +55,7 @@ export function BuildList() {
     })
     if (c === 'cancel') return false
     if (c === 'confirm') saveDraft()
-    return true // 'third' = verwerfen (Wechsel setzt Draft ohnehin zurück)
+    return true
   }
 
   async function onSelect(id: string) {
@@ -83,24 +85,29 @@ export function BuildList() {
     const target = builds.find((b) => b.id === targetId)
     const dragged = builds.find((b) => b.id === dragId)
     if (!target || !dragged) return
-    if (dragged.groupId !== target.groupId)
-      setBuildGroup(dragId, target.groupId)
+    const union = [...new Set([...dragged.groupIds, ...target.groupIds])]
+    if (union.length !== dragged.groupIds.length)
+      setBuildGroups(dragId, union)
     const ids = builds.map((b) => b.id).filter((id) => id !== dragId)
     ids.splice(ids.indexOf(targetId), 0, dragId)
     reorderBuilds(ids)
     setDragId(null)
   }
 
+  // Drop auf Sektion: null = aus allen Gruppen entfernen; sonst zur Gruppe hinzufügen.
   function onDropOnGroup(groupId: string | null) {
     if (!dragId) return
-    setBuildGroup(dragId, groupId)
+    const dragged = builds.find((b) => b.id === dragId)
+    if (!dragged) return
+    if (groupId === null) setBuildGroups(dragId, [])
+    else setBuildGroups(dragId, [...new Set([...dragged.groupIds, groupId])])
     setDragId(null)
   }
 
   async function confirmDeleteGroup(g: BuildGroup) {
     const ok = await confirm({
       title: 'Gruppe löschen',
-      message: `Gruppe „${g.name}" löschen? Die Builds bleiben erhalten und werden „ohne Gruppe".`,
+      message: `Gruppe „${g.name}" löschen? Builds und Untergruppen bleiben erhalten.`,
       confirmLabel: 'Löschen',
       danger: true,
     })
@@ -108,10 +115,10 @@ export function BuildList() {
   }
 
   const ungrouped = filtered.filter(
-    (b) => !b.groupId || !groups.some((g) => g.id === b.groupId),
+    (b) => !b.groupIds.some((id) => groups.some((g) => g.id === id)),
   )
 
-  const shared = {
+  const rowProps = {
     selectedId,
     dirty,
     dragId,
@@ -119,6 +126,73 @@ export function BuildList() {
     onDropOnBuild,
     onDragStartBuild: setDragId,
     onDragEndBuild: () => setDragId(null),
+  }
+
+  function renderGroup(g: BuildGroup, depth: number) {
+    const items = filtered.filter((b) => b.groupIds.includes(g.id))
+    const kids = childrenOf(groups, g.id)
+    // Beim Filtern leere Zweige (ohne Treffer und ohne Kinder mit Treffern) ausblenden.
+    if (q && items.length === 0 && kids.length === 0) return null
+    // mögliche Elterngruppen: alle außer sich selbst (Zyklen fängt der Store zusätzlich ab)
+    const parentOptions = groups.filter((x) => x.id !== g.id)
+    return (
+      <section
+        key={g.id}
+        className="build-section"
+        style={{ marginLeft: depth ? 12 : 0 }}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.stopPropagation()
+          onDropOnGroup(g.id)
+        }}
+      >
+        <div className="group-head">
+          <input
+            className="group-name"
+            value={g.name}
+            aria-label="Gruppenname"
+            onChange={(e) => renameGroup(g.id, e.target.value)}
+          />
+          <button
+            type="button"
+            className="ghost small"
+            title="Untergruppe anlegen"
+            onClick={() => createGroup('Untergruppe', g.id)}
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="delete"
+            title="Gruppe löschen"
+            onClick={() => confirmDeleteGroup(g)}
+          >
+            ✕
+          </button>
+        </div>
+        <select
+          className="group-parent"
+          value={g.parentId ?? ''}
+          aria-label="Übergeordnete Gruppe"
+          onChange={(e) => setGroupParent(g.id, e.target.value || null)}
+        >
+          <option value="">(Top-Level)</option>
+          {parentOptions.map((p) => (
+            <option key={p.id} value={p.id}>
+              ⤷ {p.name}
+            </option>
+          ))}
+        </select>
+
+        <ul>
+          {items.map((b) => (
+            <BuildRow key={b.id} build={b} {...rowProps} />
+          ))}
+        </ul>
+
+        {kids.map((child) => renderGroup(child, depth + 1))}
+      </section>
+    )
   }
 
   return (
@@ -176,29 +250,25 @@ export function BuildList() {
       ) : (
         <div className="build-sections">
           {ungrouped.length > 0 && (
-            <BuildSection
-              label={groups.length > 0 ? 'Ohne Gruppe' : null}
-              items={ungrouped}
-              onDropOnSection={() => onDropOnGroup(null)}
-              {...shared}
-            />
+            <section
+              className="build-section"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => onDropOnGroup(null)}
+            >
+              {groups.length > 0 && (
+                <div className="group-head plain">
+                  <span className="group-name-static">Ohne Gruppe</span>
+                </div>
+              )}
+              <ul>
+                {ungrouped.map((b) => (
+                  <BuildRow key={b.id} build={b} {...rowProps} />
+                ))}
+              </ul>
+            </section>
           )}
 
-          {groups.map((g) => {
-            const items = filtered.filter((b) => b.groupId === g.id)
-            if (q && items.length === 0) return null
-            return (
-              <BuildSection
-                key={g.id}
-                group={g}
-                items={items}
-                onDropOnSection={() => onDropOnGroup(g.id)}
-                onRename={(nm) => renameGroup(g.id, nm)}
-                onDelete={() => confirmDeleteGroup(g)}
-                {...shared}
-              />
-            )
-          })}
+          {childrenOf(groups, null).map((g) => renderGroup(g, 0))}
 
           {q && filtered.length === 0 && (
             <p className="empty small">Kein Build passt zum Filter.</p>
@@ -206,68 +276,6 @@ export function BuildList() {
         </div>
       )}
     </aside>
-  )
-}
-
-interface SectionProps {
-  label?: string | null
-  group?: BuildGroup
-  items: Build[]
-  selectedId: string | null
-  dirty: boolean
-  dragId: string | null
-  onSelect: (id: string) => void
-  onDropOnSection: () => void
-  onDropOnBuild: (id: string) => void
-  onDragStartBuild: (id: string) => void
-  onDragEndBuild: () => void
-  onRename?: (name: string) => void
-  onDelete?: () => void
-}
-
-function BuildSection({
-  label,
-  group,
-  items,
-  onDropOnSection,
-  onRename,
-  onDelete,
-  ...row
-}: SectionProps) {
-  return (
-    <section
-      className="build-section"
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={onDropOnSection}
-    >
-      {group ? (
-        <div className="group-head">
-          <input
-            className="group-name"
-            value={group.name}
-            aria-label="Gruppenname"
-            onChange={(e) => onRename?.(e.target.value)}
-          />
-          <button
-            type="button"
-            className="delete"
-            title="Gruppe löschen"
-            onClick={onDelete}
-          >
-            ✕
-          </button>
-        </div>
-      ) : label ? (
-        <div className="group-head plain">
-          <span className="group-name-static">{label}</span>
-        </div>
-      ) : null}
-      <ul>
-        {items.map((b) => (
-          <BuildRow key={b.id} build={b} {...row} />
-        ))}
-      </ul>
-    </section>
   )
 }
 
@@ -303,7 +311,10 @@ function BuildRow({
       onDragStart={() => onDragStartBuild(b.id)}
       onDragEnd={onDragEndBuild}
       onDragOver={(e) => e.preventDefault()}
-      onDrop={() => onDropOnBuild(b.id)}
+      onDrop={(e) => {
+        e.stopPropagation()
+        onDropOnBuild(b.id)
+      }}
     >
       <span className="drag-handle" title="Zum Sortieren ziehen" aria-hidden>
         ⠿

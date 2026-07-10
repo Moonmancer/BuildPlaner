@@ -27,13 +27,20 @@ function migrateBuild(raw: unknown): Build {
     )
     classId = match ? match.id : null
   }
+  // groupId (alt, einzeln) -> groupIds (neu, mehrere)
+  let groupIds: string[] = []
+  if (Array.isArray(b.groupIds)) {
+    groupIds = b.groupIds.filter((g): g is string => typeof g === 'string')
+  } else if (typeof b.groupId === 'string') {
+    groupIds = [b.groupId]
+  }
   return {
     id: String(b.id ?? ''),
     name: typeof b.name === 'string' ? b.name : 'Build',
     classId,
     charLink: typeof b.charLink === 'string' ? b.charLink : '',
     notes: typeof b.notes === 'string' ? b.notes : '',
-    groupId: typeof b.groupId === 'string' ? b.groupId : null,
+    groupIds,
     milestones: Array.isArray(b.milestones) ? (b.milestones as Build['milestones']) : [],
     createdAt: typeof b.createdAt === 'string' ? b.createdAt : new Date().toISOString(),
     updatedAt: typeof b.updatedAt === 'string' ? b.updatedAt : new Date().toISOString(),
@@ -45,7 +52,11 @@ function migrateGroups(raw: unknown): BuildGroup[] {
   return raw
     .map((g) => (g ?? {}) as Record<string, unknown>)
     .filter((g) => typeof g.id === 'string' && typeof g.name === 'string')
-    .map((g) => ({ id: String(g.id), name: String(g.name) }))
+    .map((g) => ({
+      id: String(g.id),
+      name: String(g.name),
+      parentId: typeof g.parentId === 'string' ? g.parentId : null,
+    }))
 }
 
 export function loadData(): AppData {

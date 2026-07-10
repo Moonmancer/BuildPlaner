@@ -363,6 +363,43 @@ button:disabled {
 .notes {
   margin-top: 12px;
 }
+.groups-field {
+  margin-top: 12px;
+}
+.field-label {
+  display: block;
+  font-size: 0.75rem;
+  opacity: 0.65;
+  margin-bottom: 4px;
+}
+.group-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+.group-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+.group-check span {
+  margin: 0;
+}
+.group-check input {
+  width: auto;
+}
+.group-parent {
+  font-size: 0.75rem !important;
+  padding: 3px 6px !important;
+  margin-bottom: 8px;
+  opacity: 0.75;
+}
 .milestones-head {
   display: flex;
   align-items: center;

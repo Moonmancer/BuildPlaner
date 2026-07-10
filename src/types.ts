@@ -32,17 +32,19 @@ export interface Build {
   /** Optionaler Link zum Charakter (z.B. Calculator-URL). */
   charLink: string
   notes: string
-  /** Zugehörige Gruppe (BuildGroup.id) oder null für "ohne Gruppe". */
-  groupId: string | null
+  /** Zugehörige Gruppen (BuildGroup.id). Ein Build kann in mehreren Gruppen sein. */
+  groupIds: string[]
   milestones: Milestone[]
   createdAt: string
   updatedAt: string
 }
 
-/** Benutzerdefinierte Gruppe/Ordner zum Organisieren der Builds. */
+/** Benutzerdefinierte Gruppe/Ordner zum Organisieren der Builds.
+ *  Gruppen können via parentId verschachtelt werden (Baum). */
 export interface BuildGroup {
   id: string
   name: string
+  parentId: string | null
 }
 
 /** Gesamter persistierter App-Zustand. `version` erlaubt spätere Migrationen. */
