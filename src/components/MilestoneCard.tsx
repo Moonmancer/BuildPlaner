@@ -70,7 +70,11 @@ export function MilestoneCard({ buildId, milestone: m }: Props) {
         </div>
 
         <h4>Stats</h4>
-        <StatsEditor stats={m.stats} onChange={(stats) => patch({ stats })} />
+        <StatsEditor
+          stats={m.stats}
+          baseLevel={m.baseLevel}
+          onChange={(stats) => patch({ stats })}
+        />
 
         <h4>Skills</h4>
         <SkillList skills={m.skills} onChange={(skills) => patch({ skills })} />
