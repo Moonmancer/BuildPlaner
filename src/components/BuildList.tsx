@@ -32,6 +32,7 @@ export function BuildList() {
   const [newGroup, setNewGroup] = useState('')
   const [showGroupInput, setShowGroupInput] = useState(false)
   const [dragId, setDragId] = useState<string | null>(null)
+  const [groupDragId, setGroupDragId] = useState<string | null>(null)
 
   const q = filter.trim().toLowerCase()
   const filtered = useMemo(
@@ -104,6 +105,17 @@ export function BuildList() {
     setDragId(null)
   }
 
+  // Drop auf eine Sektion: wird eine GRUPPE gezogen -> umhängen (groupId=null => Top-Level),
+  // sonst Build-Zuordnung. Der Store fängt Selbstbezug/Zyklen ab.
+  function onSectionDrop(groupId: string | null) {
+    if (groupDragId) {
+      if (groupDragId !== groupId) setGroupParent(groupDragId, groupId)
+      setGroupDragId(null)
+      return
+    }
+    onDropOnGroup(groupId)
+  }
+
   async function confirmDeleteGroup(g: BuildGroup) {
     const ok = await confirm({
       title: 'Gruppe löschen',
@@ -138,15 +150,24 @@ export function BuildList() {
     return (
       <section
         key={g.id}
-        className="build-section"
+        className={`build-section${groupDragId === g.id ? ' dragging' : ''}`}
         style={{ marginLeft: depth ? 12 : 0 }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.stopPropagation()
-          onDropOnGroup(g.id)
+          onSectionDrop(g.id)
         }}
       >
         <div className="group-head">
+          <span
+            className="drag-handle"
+            title="Gruppe umhängen (ziehen)"
+            draggable
+            onDragStart={() => setGroupDragId(g.id)}
+            onDragEnd={() => setGroupDragId(null)}
+          >
+            ⠿
+          </span>
           <input
             className="group-name"
             value={g.name}
@@ -249,15 +270,17 @@ export function BuildList() {
         <p className="empty">Noch keine Builds. Lege oben deinen ersten an.</p>
       ) : (
         <div className="build-sections">
-          {ungrouped.length > 0 && (
+          {(ungrouped.length > 0 || groups.length > 0) && (
             <section
               className="build-section"
               onDragOver={(e) => e.preventDefault()}
-              onDrop={() => onDropOnGroup(null)}
+              onDrop={() => onSectionDrop(null)}
             >
               {groups.length > 0 && (
                 <div className="group-head plain">
-                  <span className="group-name-static">Ohne Gruppe</span>
+                  <span className="group-name-static">
+                    Ohne Gruppe / Top-Level
+                  </span>
                 </div>
               )}
               <ul>
@@ -312,6 +335,9 @@ function BuildRow({
       onDragEnd={onDragEndBuild}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
+        // Nur wenn ein Build gezogen wird hier behandeln; sonst (Gruppen-Drag)
+        // zur Sektion durchreichen (Umhängen).
+        if (!dragId) return
         e.stopPropagation()
         onDropOnBuild(b.id)
       }}
