@@ -48,24 +48,23 @@ export function BuildDetail() {
 
   return (
     <section className="build-detail">
-      <div className={`save-bar${dirty ? ' dirty' : ''}`}>
-        <span className="save-state">
-          {dirty ? '● Ungespeicherte Änderungen' : '✓ Gespeichert'}
-        </span>
-        <div className="save-actions">
-          <button
-            type="button"
-            className="btn-secondary"
-            disabled={!dirty}
-            onClick={discardDraft}
-          >
-            Verwerfen
-          </button>
-          <button type="button" disabled={!dirty} onClick={saveDraft}>
-            Speichern
-          </button>
+      {dirty && (
+        <div className="save-bar dirty">
+          <span className="save-state">● Ungespeicherte Änderungen</span>
+          <div className="save-actions">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={discardDraft}
+            >
+              Verwerfen
+            </button>
+            <button type="button" onClick={saveDraft}>
+              Speichern
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="detail-head">
         <label className="grow">
