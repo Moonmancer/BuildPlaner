@@ -1,12 +1,14 @@
 import './App.css'
 import { StoreProvider } from './store'
+import { ConfirmProvider } from './components/ConfirmDialog'
 import { BuildList } from './components/BuildList'
 import { BuildDetail } from './components/BuildDetail'
 
 function App() {
   return (
     <StoreProvider>
-      <div className="app">
+      <ConfirmProvider>
+        <div className="app">
         <header className="app-header">
           <h1>BuildPlaner</h1>
           <span className="badge">Pre-Renewal</span>
@@ -17,7 +19,8 @@ function App() {
           <BuildList />
           <BuildDetail />
         </div>
-      </div>
+        </div>
+      </ConfirmProvider>
     </StoreProvider>
   )
 }

@@ -29,16 +29,27 @@ export interface Build {
   name: string
   /** Klassen-ID aus der Registry (src/ro/classes.ts) oder null, wenn keine gewählt. */
   classId: string | null
+  /** Optionaler Link zum Charakter (z.B. Calculator-URL). */
+  charLink: string
   notes: string
+  /** Zugehörige Gruppe (BuildGroup.id) oder null für "ohne Gruppe". */
+  groupId: string | null
   milestones: Milestone[]
   createdAt: string
   updatedAt: string
+}
+
+/** Benutzerdefinierte Gruppe/Ordner zum Organisieren der Builds. */
+export interface BuildGroup {
+  id: string
+  name: string
 }
 
 /** Gesamter persistierter App-Zustand. `version` erlaubt spätere Migrationen. */
 export interface AppData {
   version: number
   builds: Build[]
+  groups: BuildGroup[]
 }
 
 export const DATA_VERSION = 1
