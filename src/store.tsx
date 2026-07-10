@@ -1,5 +1,11 @@
-// Zentraler App-Store: hält alle Builds + Gruppen + die aktuelle Auswahl,
-// kapselt sämtliche Mutationen und persistiert automatisch in den localStorage.
+// Zentraler App-Store.
+//
+// Persistenz-Modell (Dirty-State):
+//  - Build-INHALT (name, classId, charLink, notes, milestones inkl. stats/skills) wird in einer
+//    Draft-Kopie des ausgewählten Builds bearbeitet und erst per Save committet. dirty zeigt an,
+//    ob der Draft ungespeicherte Änderungen hat.
+//  - STRUKTUR-Aktionen (Build/Gruppe anlegen/löschen, Sortierung, Gruppen-Zuordnung) wirken sofort
+//    auf die committete builds/groups-Liste und werden automatisch persistiert.
 
 import {
   createContext,
@@ -29,31 +35,41 @@ function now(): string {
   return new Date().toISOString()
 }
 
-interface State {
-  builds: Build[]
-  groups: BuildGroup[]
-  selectedId: string | null
+function clone<T>(value: T): T {
+  return structuredClone(value)
 }
 
-type BuildPatch = Partial<
-  Pick<Build, 'name' | 'classId' | 'charLink' | 'notes' | 'groupId'>
+interface State {
+  builds: Build[] // committet + persistiert
+  groups: BuildGroup[]
+  selectedId: string | null
+  draft: Build | null // Arbeitskopie des ausgewählten Builds
+  dirty: boolean
+}
+
+type BuildContentPatch = Partial<
+  Pick<Build, 'name' | 'classId' | 'charLink' | 'notes'>
 >
 
 type Action =
   | { type: 'createBuild'; name: string }
   | { type: 'deleteBuild'; buildId: string }
   | { type: 'selectBuild'; buildId: string | null }
-  | { type: 'updateBuild'; buildId: string; patch: BuildPatch }
   | { type: 'reorderBuilds'; orderedIds: string[] }
-  | { type: 'addMilestone'; buildId: string }
-  | { type: 'deleteMilestone'; buildId: string; milestoneId: string }
+  | { type: 'setBuildGroup'; buildId: string; groupId: string | null }
+  // Inhaltliche Edits -> Draft
+  | { type: 'updateDraft'; patch: BuildContentPatch }
+  | { type: 'addMilestone' }
+  | { type: 'deleteMilestone'; milestoneId: string }
   | {
       type: 'updateMilestone'
-      buildId: string
       milestoneId: string
       patch: Partial<Omit<Milestone, 'id'>>
     }
-  | { type: 'reorderMilestones'; buildId: string; orderedIds: string[] }
+  | { type: 'reorderMilestones'; orderedIds: string[] }
+  | { type: 'saveDraft' }
+  | { type: 'discardDraft' }
+  // Gruppen (Struktur)
   | { type: 'createGroup'; name: string }
   | { type: 'renameGroup'; groupId: string; name: string }
   | { type: 'deleteGroup'; groupId: string }
@@ -69,22 +85,21 @@ function newMilestone(): Milestone {
   }
 }
 
-/** Wendet eine Änderung auf einen Build an und setzt updatedAt. */
-function mapBuild(
-  state: State,
-  buildId: string,
-  fn: (b: Build) => Build,
-): State {
+function newBuild(name: string): Build {
+  const ts = now()
   return {
-    ...state,
-    builds: state.builds.map((b) =>
-      b.id === buildId ? { ...fn(b), updatedAt: now() } : b,
-    ),
+    id: newId(),
+    name: name.trim() || 'Neuer Build',
+    classId: null,
+    charLink: '',
+    notes: '',
+    groupId: null,
+    milestones: [newMilestone()],
+    createdAt: ts,
+    updatedAt: ts,
   }
 }
 
-/** Sortiert eine Liste nach einer vorgegebenen ID-Reihenfolge; nicht genannte
- *  Einträge werden hinten stabil angehängt. */
 function applyOrder<T extends { id: string }>(
   items: T[],
   orderedIds: string[],
@@ -102,71 +117,115 @@ function applyOrder<T extends { id: string }>(
   return result
 }
 
+/** Bearbeitet die Draft-Milestones und markiert dirty. */
+function editDraftMilestones(
+  state: State,
+  fn: (ms: Milestone[]) => Milestone[],
+): State {
+  if (!state.draft) return state
+  return {
+    ...state,
+    draft: { ...state.draft, milestones: fn(state.draft.milestones) },
+    dirty: true,
+  }
+}
+
+function draftFor(builds: Build[], id: string | null): Build | null {
+  const b = builds.find((x) => x.id === id)
+  return b ? clone(b) : null
+}
+
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'createBuild': {
-      const ts = now()
-      const build: Build = {
-        id: newId(),
-        name: action.name.trim() || 'Neuer Build',
-        classId: null,
-        charLink: '',
-        notes: '',
-        groupId: null,
-        // Ein Build ohne Milestone ergibt keinen Sinn -> gleich einen anlegen.
-        milestones: [newMilestone()],
-        createdAt: ts,
-        updatedAt: ts,
-      }
+      const build = newBuild(action.name)
       return {
         ...state,
         builds: [build, ...state.builds],
         selectedId: build.id,
+        draft: clone(build),
+        dirty: false,
       }
     }
     case 'deleteBuild': {
       const builds = state.builds.filter((b) => b.id !== action.buildId)
-      const selectedId =
-        state.selectedId === action.buildId
-          ? (builds[0]?.id ?? null)
-          : state.selectedId
-      return { ...state, builds, selectedId }
+      if (state.selectedId !== action.buildId) return { ...state, builds }
+      const selectedId = builds[0]?.id ?? null
+      return {
+        ...state,
+        builds,
+        selectedId,
+        draft: draftFor(builds, selectedId),
+        dirty: false,
+      }
     }
     case 'selectBuild':
-      return { ...state, selectedId: action.buildId }
-    case 'updateBuild':
-      return mapBuild(state, action.buildId, (b) => ({ ...b, ...action.patch }))
+      return {
+        ...state,
+        selectedId: action.buildId,
+        draft: draftFor(state.builds, action.buildId),
+        dirty: false,
+      }
     case 'reorderBuilds':
       return { ...state, builds: applyOrder(state.builds, action.orderedIds) }
+    case 'setBuildGroup': {
+      // Struktur: sofort auf builds; Draft (falls betroffen) synchron halten.
+      const builds = state.builds.map((b) =>
+        b.id === action.buildId
+          ? { ...b, groupId: action.groupId, updatedAt: now() }
+          : b,
+      )
+      const draft =
+        state.draft && state.draft.id === action.buildId
+          ? { ...state.draft, groupId: action.groupId }
+          : state.draft
+      return { ...state, builds, draft }
+    }
+    case 'updateDraft':
+      if (!state.draft) return state
+      return {
+        ...state,
+        draft: { ...state.draft, ...action.patch },
+        dirty: true,
+      }
     case 'addMilestone':
-      return mapBuild(state, action.buildId, (b) => ({
-        ...b,
-        milestones: [...b.milestones, newMilestone()],
-      }))
+      return editDraftMilestones(state, (ms) => [...ms, newMilestone()])
     case 'deleteMilestone':
-      return mapBuild(state, action.buildId, (b) => ({
-        ...b,
-        milestones: b.milestones.filter((m) => m.id !== action.milestoneId),
-      }))
+      return editDraftMilestones(state, (ms) =>
+        ms.filter((m) => m.id !== action.milestoneId),
+      )
     case 'updateMilestone':
-      return mapBuild(state, action.buildId, (b) => ({
-        ...b,
-        milestones: b.milestones.map((m) =>
+      return editDraftMilestones(state, (ms) =>
+        ms.map((m) =>
           m.id === action.milestoneId ? { ...m, ...action.patch } : m,
         ),
-      }))
+      )
     case 'reorderMilestones':
-      return mapBuild(state, action.buildId, (b) => ({
-        ...b,
-        milestones: applyOrder(b.milestones, action.orderedIds),
-      }))
+      return editDraftMilestones(state, (ms) =>
+        applyOrder(ms, action.orderedIds),
+      )
+    case 'saveDraft': {
+      if (!state.draft || !state.dirty) return state
+      const committed = { ...state.draft, updatedAt: now() }
+      return {
+        ...state,
+        builds: state.builds.map((b) =>
+          b.id === committed.id ? committed : b,
+        ),
+        draft: clone(committed),
+        dirty: false,
+      }
+    }
+    case 'discardDraft':
+      return {
+        ...state,
+        draft: draftFor(state.builds, state.selectedId),
+        dirty: false,
+      }
     case 'createGroup': {
       const name = action.name.trim()
       if (!name) return state
-      return {
-        ...state,
-        groups: [...state.groups, { id: newId(), name }],
-      }
+      return { ...state, groups: [...state.groups, { id: newId(), name }] }
     }
     case 'renameGroup':
       return {
@@ -181,7 +240,6 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         groups: state.groups.filter((g) => g.id !== action.groupId),
-        // Builds der Gruppe werden "ohne Gruppe".
         builds: state.builds.map((b) =>
           b.groupId === action.groupId ? { ...b, groupId: null } : b,
         ),
@@ -193,10 +251,13 @@ function reducer(state: State, action: Action): State {
 
 function init(): State {
   const data = loadData()
+  const selectedId = data.builds[0]?.id ?? null
   return {
     builds: data.builds,
     groups: data.groups,
-    selectedId: data.builds[0]?.id ?? null,
+    selectedId,
+    draft: draftFor(data.builds, selectedId),
+    dirty: false,
   }
 }
 
@@ -204,20 +265,24 @@ interface Store {
   builds: Build[]
   groups: BuildGroup[]
   selectedId: string | null
-  selectedBuild: Build | null
+  /** Arbeitskopie des ausgewählten Builds (Bearbeitung erfolgt hier). */
+  draft: Build | null
+  dirty: boolean
   createBuild: (name: string) => void
   deleteBuild: (buildId: string) => void
   selectBuild: (buildId: string | null) => void
-  updateBuild: (buildId: string, patch: BuildPatch) => void
   reorderBuilds: (orderedIds: string[]) => void
-  addMilestone: (buildId: string) => void
-  deleteMilestone: (buildId: string, milestoneId: string) => void
+  setBuildGroup: (buildId: string, groupId: string | null) => void
+  updateDraft: (patch: BuildContentPatch) => void
+  addMilestone: () => void
+  deleteMilestone: (milestoneId: string) => void
   updateMilestone: (
-    buildId: string,
     milestoneId: string,
     patch: Partial<Omit<Milestone, 'id'>>,
   ) => void
-  reorderMilestones: (buildId: string, orderedIds: string[]) => void
+  reorderMilestones: (orderedIds: string[]) => void
+  saveDraft: () => void
+  discardDraft: () => void
   createGroup: (name: string) => void
   renameGroup: (groupId: string, name: string) => void
   deleteGroup: (groupId: string) => void
@@ -229,7 +294,8 @@ const StoreContext = createContext<Store | null>(null)
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, init)
 
-  // Automatisch persistieren, wann immer sich Builds oder Gruppen ändern.
+  // Nur committete Struktur (builds/groups) wird persistiert. Draft-Edits ändern
+  // diese nicht und lösen daher kein Speichern aus – erst saveDraft schreibt.
   useEffect(() => {
     saveData({ version: 1, builds: state.builds, groups: state.groups })
   }, [state.builds, state.groups])
@@ -239,22 +305,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       builds: state.builds,
       groups: state.groups,
       selectedId: state.selectedId,
-      selectedBuild:
-        state.builds.find((b) => b.id === state.selectedId) ?? null,
+      draft: state.draft,
+      dirty: state.dirty,
       createBuild: (name) => dispatch({ type: 'createBuild', name }),
       deleteBuild: (buildId) => dispatch({ type: 'deleteBuild', buildId }),
       selectBuild: (buildId) => dispatch({ type: 'selectBuild', buildId }),
-      updateBuild: (buildId, patch) =>
-        dispatch({ type: 'updateBuild', buildId, patch }),
       reorderBuilds: (orderedIds) =>
         dispatch({ type: 'reorderBuilds', orderedIds }),
-      addMilestone: (buildId) => dispatch({ type: 'addMilestone', buildId }),
-      deleteMilestone: (buildId, milestoneId) =>
-        dispatch({ type: 'deleteMilestone', buildId, milestoneId }),
-      updateMilestone: (buildId, milestoneId, patch) =>
-        dispatch({ type: 'updateMilestone', buildId, milestoneId, patch }),
-      reorderMilestones: (buildId, orderedIds) =>
-        dispatch({ type: 'reorderMilestones', buildId, orderedIds }),
+      setBuildGroup: (buildId, groupId) =>
+        dispatch({ type: 'setBuildGroup', buildId, groupId }),
+      updateDraft: (patch) => dispatch({ type: 'updateDraft', patch }),
+      addMilestone: () => dispatch({ type: 'addMilestone' }),
+      deleteMilestone: (milestoneId) =>
+        dispatch({ type: 'deleteMilestone', milestoneId }),
+      updateMilestone: (milestoneId, patch) =>
+        dispatch({ type: 'updateMilestone', milestoneId, patch }),
+      reorderMilestones: (orderedIds) =>
+        dispatch({ type: 'reorderMilestones', orderedIds }),
+      saveDraft: () => dispatch({ type: 'saveDraft' }),
+      discardDraft: () => dispatch({ type: 'discardDraft' }),
       createGroup: (name) => dispatch({ type: 'createGroup', name }),
       renameGroup: (groupId, name) =>
         dispatch({ type: 'renameGroup', groupId, name }),

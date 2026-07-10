@@ -13,51 +13,63 @@ interface ConfirmOptions {
   message?: string
   confirmLabel?: string
   cancelLabel?: string
+  /** Optionaler dritter Button (z.B. „Verwerfen"). */
+  thirdLabel?: string
   danger?: boolean
 }
 
-type ConfirmFn = (options: ConfirmOptions) => Promise<boolean>
+type Choice = 'confirm' | 'third' | 'cancel'
 
-const ConfirmContext = createContext<ConfirmFn | null>(null)
+interface ConfirmApi {
+  confirm: (options: ConfirmOptions) => Promise<boolean>
+  confirmChoice: (options: ConfirmOptions) => Promise<Choice>
+}
 
-/** Stellt eine imperative confirm()-Funktion bereit, die ein eigenes Modal
- *  anzeigt und ein Promise<boolean> zurückgibt. */
+const ConfirmContext = createContext<ConfirmApi | null>(null)
+
+/** Stellt imperative confirm()/confirmChoice()-Funktionen bereit, die ein eigenes
+ *  Modal anzeigen. confirm liefert boolean, confirmChoice ein 3-Wege-Ergebnis. */
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [options, setOptions] = useState<ConfirmOptions | null>(null)
-  const resolver = useRef<((ok: boolean) => void) | null>(null)
+  const resolver = useRef<((c: Choice) => void) | null>(null)
   const confirmBtnRef = useRef<HTMLButtonElement>(null)
 
-  const confirm = useCallback<ConfirmFn>((opts) => {
+  const ask = useCallback((opts: ConfirmOptions) => {
     setOptions(opts)
-    return new Promise<boolean>((resolve) => {
+    return new Promise<Choice>((resolve) => {
       resolver.current = resolve
     })
   }, [])
 
-  const close = useCallback((ok: boolean) => {
-    resolver.current?.(ok)
+  const close = useCallback((choice: Choice) => {
+    resolver.current?.(choice)
     resolver.current = null
     setOptions(null)
   }, [])
+
+  const api = useRef<ConfirmApi>({
+    confirm: (opts) => ask(opts).then((c) => c === 'confirm'),
+    confirmChoice: (opts) => ask(opts),
+  })
 
   useEffect(() => {
     if (!options) return
     confirmBtnRef.current?.focus()
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') close(false)
-      else if (e.key === 'Enter') close(true)
+      if (e.key === 'Escape') close('cancel')
+      else if (e.key === 'Enter') close('confirm')
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [options, close])
 
   return (
-    <ConfirmContext.Provider value={confirm}>
+    <ConfirmContext.Provider value={api.current}>
       {children}
       {options && (
         <div
           className="modal-backdrop"
-          onMouseDown={() => close(false)}
+          onMouseDown={() => close('cancel')}
           role="presentation"
         >
           <div
@@ -68,20 +80,31 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             onMouseDown={(e) => e.stopPropagation()}
           >
             <h3 className="modal-title">{options.title}</h3>
-            {options.message && <p className="modal-message">{options.message}</p>}
+            {options.message && (
+              <p className="modal-message">{options.message}</p>
+            )}
             <div className="modal-actions">
               <button
                 type="button"
                 className="btn-secondary"
-                onClick={() => close(false)}
+                onClick={() => close('cancel')}
               >
                 {options.cancelLabel ?? 'Abbrechen'}
               </button>
+              {options.thirdLabel && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => close('third')}
+                >
+                  {options.thirdLabel}
+                </button>
+              )}
               <button
                 type="button"
                 ref={confirmBtnRef}
                 className={options.danger ? 'btn-danger' : ''}
-                onClick={() => close(true)}
+                onClick={() => close('confirm')}
               >
                 {options.confirmLabel ?? 'OK'}
               </button>
@@ -93,9 +116,17 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function useConfirm(): ConfirmFn {
-  const confirm = useContext(ConfirmContext)
-  if (!confirm)
+function useApi(): ConfirmApi {
+  const api = useContext(ConfirmContext)
+  if (!api)
     throw new Error('useConfirm muss innerhalb von ConfirmProvider stehen')
-  return confirm
+  return api
+}
+
+export function useConfirm() {
+  return useApi().confirm
+}
+
+export function useConfirmChoice() {
+  return useApi().confirmChoice
 }

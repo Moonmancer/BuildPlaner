@@ -5,7 +5,6 @@ import { SkillList } from './SkillList'
 import { useConfirm } from './ConfirmDialog'
 
 interface Props {
-  buildId: string
   milestone: Milestone
   dragging?: boolean
   onDragStart?: () => void
@@ -15,7 +14,6 @@ interface Props {
 
 /** Ein einklappbarer Milestone: Label, Level, Stats und Skills. */
 export function MilestoneCard({
-  buildId,
   milestone: m,
   dragging,
   onDragStart,
@@ -26,7 +24,7 @@ export function MilestoneCard({
   const confirm = useConfirm()
 
   function patch(p: Partial<Omit<Milestone, 'id'>>) {
-    updateMilestone(buildId, m.id, p)
+    updateMilestone(m.id, p)
   }
 
   return (
@@ -118,7 +116,7 @@ export function MilestoneCard({
                 confirmLabel: 'Löschen',
                 danger: true,
               })
-              if (ok) deleteMilestone(buildId, m.id)
+              if (ok) deleteMilestone(m.id)
             }}
           >
             Milestone löschen

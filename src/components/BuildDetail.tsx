@@ -9,13 +9,23 @@ function extractUrls(text: string): string[] {
   return [...new Set(matches)]
 }
 
-/** Rechte Spalte: Details des ausgewählten Builds inkl. seiner Milestones. */
+/** Rechte Spalte: Details des ausgewählten Builds inkl. seiner Milestones.
+ *  Bearbeitet wird die Draft-Kopie; Änderungen werden erst per Save übernommen. */
 export function BuildDetail() {
-  const { selectedBuild, groups, updateBuild, addMilestone, reorderMilestones } =
-    useStore()
+  const {
+    draft,
+    dirty,
+    groups,
+    updateDraft,
+    setBuildGroup,
+    addMilestone,
+    reorderMilestones,
+    saveDraft,
+    discardDraft,
+  } = useStore()
   const [msDragId, setMsDragId] = useState<string | null>(null)
 
-  if (!selectedBuild) {
+  if (!draft) {
     return (
       <section className="build-detail empty-detail">
         <p>Kein Build ausgewählt. Wähle links einen aus oder lege einen an.</p>
@@ -23,19 +33,38 @@ export function BuildDetail() {
     )
   }
 
-  const b = selectedBuild
+  const b = draft
   const noteUrls = extractUrls(b.notes)
 
   function onDropOnMilestone(targetId: string) {
     if (!msDragId || msDragId === targetId) return
     const ids = b.milestones.map((m) => m.id).filter((id) => id !== msDragId)
     ids.splice(ids.indexOf(targetId), 0, msDragId)
-    reorderMilestones(b.id, ids)
+    reorderMilestones(ids)
     setMsDragId(null)
   }
 
   return (
     <section className="build-detail">
+      <div className={`save-bar${dirty ? ' dirty' : ''}`}>
+        <span className="save-state">
+          {dirty ? '● Ungespeicherte Änderungen' : '✓ Gespeichert'}
+        </span>
+        <div className="save-actions">
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={!dirty}
+            onClick={discardDraft}
+          >
+            Verwerfen
+          </button>
+          <button type="button" disabled={!dirty} onClick={saveDraft}>
+            Speichern
+          </button>
+        </div>
+      </div>
+
       <div className="detail-head">
         <label className="grow">
           <span>Build-Name</span>
@@ -43,23 +72,21 @@ export function BuildDetail() {
             type="text"
             className="build-title"
             value={b.name}
-            onChange={(e) => updateBuild(b.id, { name: e.target.value })}
+            onChange={(e) => updateDraft({ name: e.target.value })}
           />
         </label>
         <label>
           <span>Klasse</span>
           <ClassSelect
             value={b.classId}
-            onChange={(classId) => updateBuild(b.id, { classId })}
+            onChange={(classId) => updateDraft({ classId })}
           />
         </label>
         <label>
           <span>Gruppe</span>
           <select
             value={b.groupId ?? ''}
-            onChange={(e) =>
-              updateBuild(b.id, { groupId: e.target.value || null })
-            }
+            onChange={(e) => setBuildGroup(b.id, e.target.value || null)}
           >
             <option value="">— ohne Gruppe —</option>
             {groups.map((g) => (
@@ -78,7 +105,7 @@ export function BuildDetail() {
             type="url"
             value={b.charLink}
             placeholder="https://…"
-            onChange={(e) => updateBuild(b.id, { charLink: e.target.value })}
+            onChange={(e) => updateDraft({ charLink: e.target.value })}
           />
           {b.charLink.trim() && (
             <a
@@ -99,7 +126,7 @@ export function BuildDetail() {
           rows={2}
           value={b.notes}
           placeholder="Freie Notizen zum Build… (URLs werden anklickbar)"
-          onChange={(e) => updateBuild(b.id, { notes: e.target.value })}
+          onChange={(e) => updateDraft({ notes: e.target.value })}
         />
       </label>
       {noteUrls.length > 0 && (
@@ -120,7 +147,7 @@ export function BuildDetail() {
 
       <div className="milestones-head">
         <h3>Milestones</h3>
-        <button type="button" onClick={() => addMilestone(b.id)}>
+        <button type="button" onClick={addMilestone}>
           + Milestone
         </button>
       </div>
@@ -129,7 +156,6 @@ export function BuildDetail() {
         {b.milestones.map((m) => (
           <MilestoneCard
             key={m.id}
-            buildId={b.id}
             milestone={m}
             dragging={msDragId === m.id}
             onDragStart={() => setMsDragId(m.id)}

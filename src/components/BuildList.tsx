@@ -1,7 +1,7 @@
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { useStore } from '../store'
 import { getClass } from '../ro/classes'
-import { useConfirm } from './ConfirmDialog'
+import { useConfirm, useConfirmChoice } from './ConfirmDialog'
 import type { Build, BuildGroup } from '../types'
 
 /** Linke Spalte: Builds anlegen, filtern, gruppieren, per Drag&Drop sortieren. */
@@ -10,14 +10,19 @@ export function BuildList() {
     builds,
     groups,
     selectedId,
+    draft,
+    dirty,
     createBuild,
     createGroup,
     renameGroup,
     deleteGroup,
-    updateBuild,
+    selectBuild,
+    saveDraft,
+    setBuildGroup,
     reorderBuilds,
   } = useStore()
   const confirm = useConfirm()
+  const confirmChoice = useConfirmChoice()
 
   const [name, setName] = useState('')
   const [filter, setFilter] = useState('')
@@ -36,10 +41,31 @@ export function BuildList() {
     [builds, q],
   )
 
-  function submitBuild(e: FormEvent) {
+  /** Prüft vor dem Verlassen des aktuellen Builds auf ungespeicherte Änderungen. */
+  async function guard(): Promise<boolean> {
+    if (!dirty) return true
+    const c = await confirmChoice({
+      title: 'Ungespeicherte Änderungen',
+      message: `Der Build „${draft?.name ?? ''}" hat ungespeicherte Änderungen.`,
+      confirmLabel: 'Speichern',
+      thirdLabel: 'Verwerfen',
+      cancelLabel: 'Abbrechen',
+    })
+    if (c === 'cancel') return false
+    if (c === 'confirm') saveDraft()
+    return true // 'third' = verwerfen (Wechsel setzt Draft ohnehin zurück)
+  }
+
+  async function onSelect(id: string) {
+    if (id === selectedId) return
+    if (await guard()) selectBuild(id)
+  }
+
+  async function submitBuild(e: FormEvent) {
     e.preventDefault()
     const trimmed = name.trim()
     if (!trimmed) return
+    if (!(await guard())) return
     createBuild(trimmed)
     setName('')
   }
@@ -52,24 +78,22 @@ export function BuildList() {
     setShowGroupInput(false)
   }
 
-  // Drop auf einen anderen Build: davor einsortieren und dessen Gruppe übernehmen.
   function onDropOnBuild(targetId: string) {
     if (!dragId || dragId === targetId) return
     const target = builds.find((b) => b.id === targetId)
     const dragged = builds.find((b) => b.id === dragId)
     if (!target || !dragged) return
     if (dragged.groupId !== target.groupId)
-      updateBuild(dragId, { groupId: target.groupId })
+      setBuildGroup(dragId, target.groupId)
     const ids = builds.map((b) => b.id).filter((id) => id !== dragId)
     ids.splice(ids.indexOf(targetId), 0, dragId)
     reorderBuilds(ids)
     setDragId(null)
   }
 
-  // Drop auf eine Sektionsüberschrift: nur der Gruppe zuordnen.
   function onDropOnGroup(groupId: string | null) {
     if (!dragId) return
-    updateBuild(dragId, { groupId })
+    setBuildGroup(dragId, groupId)
     setDragId(null)
   }
 
@@ -89,10 +113,12 @@ export function BuildList() {
 
   const shared = {
     selectedId,
+    dirty,
     dragId,
+    onSelect,
+    onDropOnBuild,
     onDragStartBuild: setDragId,
     onDragEndBuild: () => setDragId(null),
-    onDropOnBuild,
   }
 
   return (
@@ -188,7 +214,9 @@ interface SectionProps {
   group?: BuildGroup
   items: Build[]
   selectedId: string | null
+  dirty: boolean
   dragId: string | null
+  onSelect: (id: string) => void
   onDropOnSection: () => void
   onDropOnBuild: (id: string) => void
   onDragStartBuild: (id: string) => void
@@ -246,7 +274,9 @@ function BuildSection({
 interface RowProps {
   build: Build
   selectedId: string | null
+  dirty: boolean
   dragId: string | null
+  onSelect: (id: string) => void
   onDropOnBuild: (id: string) => void
   onDragStartBuild: (id: string) => void
   onDragEndBuild: () => void
@@ -255,17 +285,20 @@ interface RowProps {
 function BuildRow({
   build: b,
   selectedId,
+  dirty,
   dragId,
+  onSelect,
   onDropOnBuild,
   onDragStartBuild,
   onDragEndBuild,
-}: RowProps): ReactNode {
-  const { selectBuild, deleteBuild } = useStore()
+}: RowProps) {
+  const { deleteBuild } = useStore()
   const confirm = useConfirm()
+  const isSelected = b.id === selectedId
 
   return (
     <li
-      className={`build-item${b.id === selectedId ? ' active' : ''}${dragId === b.id ? ' dragging' : ''}`}
+      className={`build-item${isSelected ? ' active' : ''}${dragId === b.id ? ' dragging' : ''}`}
       draggable
       onDragStart={() => onDragStartBuild(b.id)}
       onDragEnd={onDragEndBuild}
@@ -275,8 +308,15 @@ function BuildRow({
       <span className="drag-handle" title="Zum Sortieren ziehen" aria-hidden>
         ⠿
       </span>
-      <button type="button" className="select" onClick={() => selectBuild(b.id)}>
-        <span className="build-name">{b.name}</span>
+      <button type="button" className="select" onClick={() => onSelect(b.id)}>
+        <span className="build-name">
+          {isSelected && dirty && (
+            <span className="dirty-dot" title="Ungespeichert" aria-hidden>
+              ●{' '}
+            </span>
+          )}
+          {b.name}
+        </span>
         <span className="build-meta">
           {getClass(b.classId)?.name ?? 'ohne Klasse'} · {b.milestones.length}{' '}
           Milestone{b.milestones.length === 1 ? '' : 's'}
