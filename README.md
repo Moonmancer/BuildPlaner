@@ -9,8 +9,9 @@ Läuft vollständig im Browser – keine Server, keine Datenbank.
 
 - Builds anlegen, benennen und verwalten
 - **Milestones** je Build (z.B. „Lvl 10", „Endgame") mit eigenen Stats & Skills
-- Speicherung im **localStorage** des Browsers
-- **XML**-Export und -Import einzelner oder aller Builds
+- Speicherung im **localStorage** des Browsers (automatisch)
+- **XML**-Export und -Import einzelner oder aller Builds (Backup/Transfer)
+- **Share-Link**: Build in einer URL kodiert – teilbar und auf jedem Gerät öffnbar
 - Import aus den Share-URLs gängiger Calculators
   (calc.arcadia-online.org, skills.irowiki.org, irowiki.org/~himeyasha/skill7)
 - Validierung nach Pre-Renewal-Regeln (Stat-Kosten, Skill-Voraussetzungen, Skillpunkt-Budget)
@@ -22,8 +23,8 @@ Läuft vollständig im Browser – keine Server, keine Datenbank.
 | 1 | Projekt-Gerüst + GitHub-Pages-Deployment |
 | 2 | Datenmodell, localStorage, Builds & Milestones |
 | 3 | Pre-Renewal Stats + Skill-Bäume (First → Second → Expanded → Rebirth) |
-| 4 | XML Export/Import |
-| 5 | Import aus Calculator-URLs |
+| 4 | XML Export/Import + Share-Link (eigenes URL-Format) |
+| 5 | Import aus fremden Calculator-URLs |
 
 ## Entwicklung
 
