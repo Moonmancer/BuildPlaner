@@ -18,6 +18,7 @@ export function BuildList() {
     createGroup,
     renameGroup,
     setGroupParent,
+    toggleGroupCollapsed,
     deleteGroup,
     selectBuild,
     saveDraft,
@@ -145,8 +146,6 @@ export function BuildList() {
     const kids = childrenOf(groups, g.id)
     // Beim Filtern leere Zweige (ohne Treffer und ohne Kinder mit Treffern) ausblenden.
     if (q && items.length === 0 && kids.length === 0) return null
-    // mögliche Elterngruppen: alle außer sich selbst (Zyklen fängt der Store zusätzlich ab)
-    const parentOptions = groups.filter((x) => x.id !== g.id)
     return (
       <section
         key={g.id}
@@ -159,6 +158,15 @@ export function BuildList() {
         }}
       >
         <div className="group-head">
+          <button
+            type="button"
+            className="group-toggle"
+            aria-expanded={!g.collapsed}
+            title={g.collapsed ? 'Ausklappen' : 'Einklappen'}
+            onClick={() => toggleGroupCollapsed(g.id)}
+          >
+            {g.collapsed ? '▸' : '▾'}
+          </button>
           <span
             className="drag-handle"
             title="Gruppe umhängen (ziehen)"
@@ -191,27 +199,16 @@ export function BuildList() {
             ✕
           </button>
         </div>
-        <select
-          className="group-parent"
-          value={g.parentId ?? ''}
-          aria-label="Übergeordnete Gruppe"
-          onChange={(e) => setGroupParent(g.id, e.target.value || null)}
-        >
-          <option value="">(Top-Level)</option>
-          {parentOptions.map((p) => (
-            <option key={p.id} value={p.id}>
-              ⤷ {p.name}
-            </option>
-          ))}
-        </select>
-
-        <ul>
-          {items.map((b) => (
-            <BuildRow key={b.id} build={b} {...rowProps} />
-          ))}
-        </ul>
-
-        {kids.map((child) => renderGroup(child, depth + 1))}
+        {!g.collapsed && (
+          <>
+            <ul>
+              {items.map((b) => (
+                <BuildRow key={b.id} build={b} {...rowProps} />
+              ))}
+            </ul>
+            {kids.map((child) => renderGroup(child, depth + 1))}
+          </>
+        )}
       </section>
     )
   }

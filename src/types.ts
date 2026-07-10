@@ -45,6 +45,8 @@ export interface BuildGroup {
   id: string
   name: string
   parentId: string | null
+  /** Ob die Gruppe in der Liste eingeklappt dargestellt wird. */
+  collapsed?: boolean
 }
 
 /** Gesamter persistierter App-Zustand. `version` erlaubt spätere Migrationen. */

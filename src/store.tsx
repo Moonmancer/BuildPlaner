@@ -73,6 +73,7 @@ type Action =
   | { type: 'createGroup'; name: string; parentId: string | null }
   | { type: 'renameGroup'; groupId: string; name: string }
   | { type: 'setGroupParent'; groupId: string; parentId: string | null }
+  | { type: 'toggleGroupCollapsed'; groupId: string }
   | { type: 'deleteGroup'; groupId: string }
 
 function newMilestone(): Milestone {
@@ -287,6 +288,13 @@ function reducer(state: State, action: Action): State {
         ),
       }
     }
+    case 'toggleGroupCollapsed':
+      return {
+        ...state,
+        groups: state.groups.map((g) =>
+          g.id === action.groupId ? { ...g, collapsed: !g.collapsed } : g,
+        ),
+      }
     case 'deleteGroup': {
       const deleted = state.groups.find((g) => g.id === action.groupId)
       const promoteTo = deleted?.parentId ?? null
@@ -349,6 +357,7 @@ interface Store {
   createGroup: (name: string, parentId?: string | null) => void
   renameGroup: (groupId: string, name: string) => void
   setGroupParent: (groupId: string, parentId: string | null) => void
+  toggleGroupCollapsed: (groupId: string) => void
   deleteGroup: (groupId: string) => void
   newSkill: () => SkillEntry
 }
@@ -396,6 +405,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'renameGroup', groupId, name }),
       setGroupParent: (groupId, parentId) =>
         dispatch({ type: 'setGroupParent', groupId, parentId }),
+      toggleGroupCollapsed: (groupId) =>
+        dispatch({ type: 'toggleGroupCollapsed', groupId }),
       deleteGroup: (groupId) => dispatch({ type: 'deleteGroup', groupId }),
       newSkill: () => ({ id: newId(), name: '', level: 1 }),
     }),

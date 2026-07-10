@@ -97,6 +97,21 @@ button.small {
   gap: 4px;
   margin-bottom: 6px;
 }
+button.group-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  opacity: 0.6;
+  padding: 0 2px;
+  font-size: 0.7rem;
+  line-height: 1;
+  width: 16px;
+}
+button.group-toggle:hover {
+  opacity: 1;
+  filter: none;
+  background: transparent;
+}
 .group-head.plain {
   padding-left: 2px;
 }

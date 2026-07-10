@@ -56,6 +56,7 @@ function migrateGroups(raw: unknown): BuildGroup[] {
       id: String(g.id),
       name: String(g.name),
       parentId: typeof g.parentId === 'string' ? g.parentId : null,
+      collapsed: g.collapsed === true,
     }))
 }
 
