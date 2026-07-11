@@ -273,6 +273,35 @@ button.btn-danger {
   flex: 1;
   min-width: 0;
 }
+
+/* ---------- Im-/Export & Teilen ---------- */
+.list-tools {
+  display: flex;
+  gap: 6px;
+  margin: -6px 0 16px;
+}
+.build-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.share-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.share-row input {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+}
+.share-hint {
+  font-size: 0.75rem;
+  color: var(--text);
+  opacity: 0.75;
+  white-space: nowrap;
+}
 .build-list ul {
   list-style: none;
   margin: 0;

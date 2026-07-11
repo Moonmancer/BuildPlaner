@@ -75,6 +75,8 @@ type Action =
   | { type: 'setGroupParent'; groupId: string; parentId: string | null }
   | { type: 'toggleGroupCollapsed'; groupId: string }
   | { type: 'deleteGroup'; groupId: string }
+  | { type: 'importBuild'; build: Build }
+  | { type: 'importCollection'; builds: Build[]; groups: BuildGroup[] }
 
 function newMilestone(): Milestone {
   return {
@@ -84,6 +86,18 @@ function newMilestone(): Milestone {
     jobLevel: 1,
     stats: emptyStats(),
     skills: {},
+  }
+}
+
+/** Vergibt frische IDs + Zeitstempel (für Import; verhindert ID-Kollisionen). */
+function withFreshIds(build: Build): Build {
+  const ts = now()
+  return {
+    ...build,
+    id: newId(),
+    milestones: build.milestones.map((m) => ({ ...m, id: newId() })),
+    createdAt: ts,
+    updatedAt: ts,
   }
 }
 
@@ -325,6 +339,38 @@ function reducer(state: State, action: Action): State {
         ),
       }
     }
+    case 'importBuild': {
+      // Einzelnen (geteilten) Build als neuen Build übernehmen und auswählen.
+      const build = { ...withFreshIds(action.build), groupIds: [] }
+      return {
+        ...state,
+        builds: [build, ...state.builds],
+        selectedId: build.id,
+        draft: clone(build),
+        dirty: false,
+      }
+    }
+    case 'importCollection': {
+      // Ganze Sammlung anhängen; Gruppen-IDs neu vergeben und Referenzen umschreiben.
+      const groupIdMap = new Map<string, string>()
+      for (const g of action.groups) groupIdMap.set(g.id, newId())
+      const groups: BuildGroup[] = action.groups.map((g) => ({
+        ...g,
+        id: groupIdMap.get(g.id)!,
+        parentId: g.parentId ? (groupIdMap.get(g.parentId) ?? null) : null,
+      }))
+      const builds: Build[] = action.builds.map((b) => ({
+        ...withFreshIds(b),
+        groupIds: b.groupIds
+          .map((gid) => groupIdMap.get(gid))
+          .filter((x): x is string => !!x),
+      }))
+      return {
+        ...state,
+        builds: [...builds, ...state.builds],
+        groups: [...state.groups, ...groups],
+      }
+    }
     default:
       return state
   }
@@ -372,6 +418,8 @@ interface Store {
   setGroupParent: (groupId: string, parentId: string | null) => void
   toggleGroupCollapsed: (groupId: string) => void
   deleteGroup: (groupId: string) => void
+  importBuild: (build: Build) => void
+  importCollection: (builds: Build[], groups: BuildGroup[]) => void
 }
 
 const StoreContext = createContext<Store | null>(null)
@@ -420,6 +468,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toggleGroupCollapsed: (groupId) =>
         dispatch({ type: 'toggleGroupCollapsed', groupId }),
       deleteGroup: (groupId) => dispatch({ type: 'deleteGroup', groupId }),
+      importBuild: (build) => dispatch({ type: 'importBuild', build }),
+      importCollection: (builds, groups) =>
+        dispatch({ type: 'importCollection', builds, groups }),
     }),
     [state],
   )

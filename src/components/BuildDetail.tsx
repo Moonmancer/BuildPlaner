@@ -4,6 +4,8 @@ import { MilestoneCard } from './MilestoneCard'
 import { ClassSelect } from './ClassSelect'
 import { orderedGroups } from '../groupTree'
 import { getClass } from '../ro/classes'
+import { buildShareUrl } from '../share'
+import { dataToXml, downloadFile } from '../xml'
 
 /** Findet http/https-URLs in einem Text (für anklickbare Notiz-Links). */
 function extractUrls(text: string): string[] {
@@ -27,6 +29,8 @@ export function BuildDetail() {
     discardDraft,
   } = useStore()
   const [msDragId, setMsDragId] = useState<string | null>(null)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   if (!draft) {
     return (
@@ -52,6 +56,24 @@ export function BuildDetail() {
     setMsDragId(null)
   }
 
+  // Teilbaren Link erzeugen (Build im URL-Hash kodiert) und – wenn möglich – kopieren.
+  async function onShare() {
+    const url = buildShareUrl(b)
+    setShareUrl(url)
+    setCopied(false)
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+    } catch {
+      /* Clipboard nicht verfügbar → URL wird zum manuellen Kopieren angezeigt. */
+    }
+  }
+
+  function onExportXml() {
+    const safe = b.name.trim().replace(/[^\w.-]+/g, '_') || 'build'
+    downloadFile(`${safe}.xml`, dataToXml([b], []))
+  }
+
   return (
     <section className="build-detail">
       {dirty && (
@@ -69,6 +91,47 @@ export function BuildDetail() {
               Speichern
             </button>
           </div>
+        </div>
+      )}
+
+      <div className="build-actions">
+        <button
+          type="button"
+          className="ghost small"
+          onClick={onShare}
+          title="Teilbaren Link kopieren (Build im Link kodiert)"
+        >
+          🔗 Teilen
+        </button>
+        <button
+          type="button"
+          className="ghost small"
+          onClick={onExportXml}
+          title="Diesen Build als XML-Datei speichern"
+        >
+          ⬇ XML
+        </button>
+      </div>
+
+      {shareUrl && (
+        <div className="share-row">
+          <input
+            readOnly
+            value={shareUrl}
+            aria-label="Teilen-Link"
+            onFocus={(e) => e.currentTarget.select()}
+          />
+          <span className="share-hint">
+            {copied ? '✓ kopiert' : 'markieren & kopieren'}
+          </span>
+          <button
+            type="button"
+            className="ghost small"
+            onClick={() => setShareUrl(null)}
+            aria-label="Teilen-Link schließen"
+          >
+            ✕
+          </button>
         </div>
       )}
 

@@ -17,8 +17,10 @@ export function emptyData(): AppData {
 }
 
 /** Normalisiert einen (evtl. älteren) Build. Migriert das frühere Freitext-Feld
- *  `jobClass` auf eine Klassen-ID, sofern der Text eindeutig einer Klasse entspricht. */
-function migrateBuild(raw: unknown): Build {
+ *  `jobClass` auf eine Klassen-ID, sofern der Text eindeutig einer Klasse entspricht.
+ *  Auch für Import (XML/Share) genutzt – daher exportiert. IDs bleiben ggf. leer und
+ *  werden beim Import im Store frisch vergeben. */
+export function migrateBuild(raw: unknown): Build {
   const b = (raw ?? {}) as Record<string, unknown>
   let classId = typeof b.classId === 'string' ? b.classId : null
   if (classId === null && typeof b.jobClass === 'string' && b.jobClass.trim()) {
@@ -80,7 +82,7 @@ function migrateMilestone(raw: unknown): Milestone {
   }
 }
 
-function migrateGroups(raw: unknown): BuildGroup[] {
+export function migrateGroups(raw: unknown): BuildGroup[] {
   if (!Array.isArray(raw)) return []
   return raw
     .map((g) => (g ?? {}) as Record<string, unknown>)

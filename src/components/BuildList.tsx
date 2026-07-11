@@ -1,8 +1,9 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useStore } from '../store'
 import { getClass } from '../ro/classes'
 import { childrenOf } from '../groupTree'
 import { useConfirm, useConfirmChoice } from './ConfirmDialog'
+import { dataToXml, parseXml, downloadFile } from '../xml'
 import type { Build, BuildGroup } from '../types'
 
 /** Linke Spalte: Builds anlegen, filtern, in (verschachtelte) Gruppen einordnen,
@@ -24,9 +25,11 @@ export function BuildList() {
     saveDraft,
     setBuildGroups,
     reorderBuilds,
+    importCollection,
   } = useStore()
   const confirm = useConfirm()
   const confirmChoice = useConfirmChoice()
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const [name, setName] = useState('')
   const [filter, setFilter] = useState('')
@@ -80,6 +83,31 @@ export function BuildList() {
     createGroup(newGroup)
     setNewGroup('')
     setShowGroupInput(false)
+  }
+
+  function onExportAll() {
+    downloadFile('buildplaner-export.xml', dataToXml(builds, groups))
+  }
+
+  async function onImportFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // Reset: dieselbe Datei erneut auswählbar
+    if (!file) return
+    const parsed = parseXml(await file.text())
+    if (!parsed) {
+      await confirm({
+        title: 'Import fehlgeschlagen',
+        message: 'Die Datei ist kein gültiges BuildPlaner-XML.',
+        confirmLabel: 'OK',
+      })
+      return
+    }
+    importCollection(parsed.builds, parsed.groups)
+    await confirm({
+      title: 'Import abgeschlossen',
+      message: `${parsed.builds.length} Build(s) und ${parsed.groups.length} Gruppe(n) hinzugefügt.`,
+      confirmLabel: 'OK',
+    })
   }
 
   function onDropOnBuild(targetId: string) {
@@ -237,6 +265,32 @@ export function BuildList() {
         />
         <button type="submit">+ Build</button>
       </form>
+
+      <div className="list-tools">
+        <button
+          type="button"
+          className="ghost small"
+          onClick={onExportAll}
+          title="Alle Builds + Gruppen als XML exportieren"
+        >
+          ⬇ Export (XML)
+        </button>
+        <button
+          type="button"
+          className="ghost small"
+          onClick={() => fileRef.current?.click()}
+          title="Builds aus einer XML-Datei importieren"
+        >
+          ⬆ Import (XML)
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".xml,application/xml,text/xml"
+          hidden
+          onChange={onImportFile}
+        />
+      </div>
 
       {showGroupInput && (
         <form className="new-build" onSubmit={submitGroup}>

@@ -3,11 +3,13 @@ import { StoreProvider } from './store'
 import { ConfirmProvider } from './components/ConfirmDialog'
 import { BuildList } from './components/BuildList'
 import { BuildDetail } from './components/BuildDetail'
+import { ShareImport } from './components/ShareImport'
 
 function App() {
   return (
     <StoreProvider>
       <ConfirmProvider>
+        <ShareImport />
         <div className="app">
         <header className="app-header">
           <h1>BuildPlaner</h1>
