@@ -4,7 +4,7 @@ import { getClass } from '../ro/classes'
 import { childrenOf } from '../groupTree'
 import { useConfirm, useConfirmChoice } from './ConfirmDialog'
 import { dataToXml, parseXml, downloadFile } from '../xml'
-import { decodeArcadiaToBuild } from '../arcadia'
+import { decodeCalcUrl } from '../calcImport'
 import type { Build, BuildGroup } from '../types'
 
 /** Linke Spalte: Builds anlegen, filtern, in (verschachtelte) Gruppen einordnen,
@@ -116,11 +116,12 @@ export function BuildList() {
 
   async function submitArcadia(e: FormEvent) {
     e.preventDefault()
-    const build = decodeArcadiaToBuild(arcadiaUrl)
+    const build = decodeCalcUrl(arcadiaUrl)
     if (!build) {
       await confirm({
         title: 'Import fehlgeschlagen',
-        message: 'Kein gültiger Arcadia-Link (calc.arcadia-online.org).',
+        message:
+          'Kein gültiger Calculator-Link (calc.arcadia-online.org oder skills.irowiki.org).',
         confirmLabel: 'OK',
       })
       return
@@ -308,9 +309,9 @@ export function BuildList() {
           type="button"
           className="ghost small"
           onClick={() => setShowArcadia((v) => !v)}
-          title="Build aus einem calc.arcadia-online.org-Link importieren"
+          title="Build aus einem Calculator-Link importieren (Arcadia oder irowiki)"
         >
-          ⚔ Arcadia
+          ⚔ Calc-Link
         </button>
         <input
           ref={fileRef}
@@ -326,9 +327,9 @@ export function BuildList() {
           <input
             type="text"
             value={arcadiaUrl}
-            placeholder="Arcadia-Link einfügen…"
+            placeholder="Calculator-Link (Arcadia/irowiki) einfügen…"
             onChange={(e) => setArcadiaUrl(e.target.value)}
-            aria-label="Arcadia-Link"
+            aria-label="Calculator-Link"
             autoFocus
           />
           <button type="submit">Import</button>
