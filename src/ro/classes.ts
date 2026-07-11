@@ -73,7 +73,7 @@ export const CLASSES: JobClass[] = [
   { id: 'gunslinger', name: 'Gunslinger', tier: 'expanded', parent: 'novice', isRebirth: false, maxJobLevel: 70 },
 
   // --- Rebirth / Transcendent (isRebirth) ---
-  { id: 'highnovice', name: 'High Novice', tier: 'transcendent', parent: null, isRebirth: true, maxJobLevel: 10 },
+  { id: 'highnovice', name: 'High Novice', tier: 'transcendent', parent: 'novice', isRebirth: true, maxJobLevel: 10 },
   { id: 'lordknight', name: 'Lord Knight', tier: 'transcendent', parent: 'knight', isRebirth: true, maxJobLevel: 70 },
   { id: 'highpriest', name: 'High Priest', tier: 'transcendent', parent: 'priest', isRebirth: true, maxJobLevel: 70 },
   { id: 'highwizard', name: 'High Wizard', tier: 'transcendent', parent: 'wizard', isRebirth: true, maxJobLevel: 70 },

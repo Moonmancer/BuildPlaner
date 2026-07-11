@@ -5,6 +5,8 @@ import {
   skillsForClass,
   dependentsBlocking,
   skillPoints,
+  skillPool,
+  poolLabels,
   learnSkill,
   type SkillDef,
   type PoolInfo,
@@ -79,6 +81,12 @@ export function SkillTree({
     const blockers = dependentsBlocking(skill, level - 1, levels, available)
     const canInc = level < skill.maxLevel
     const canDec = level > 0 && blockers.length === 0
+    // Minimum, ohne aktive Folge-Skills zu brechen (für Strg+Klick auf „−").
+    const minAllowed = available.reduce((m, s2) => {
+      if ((levels[s2.id] ?? 0) <= 0) return m
+      const req = s2.requires.find((r) => r.id === skill.id)
+      return req ? Math.max(m, req.level) : m
+    }, 0)
     return (
       <div className={`skill-row2${level > 0 ? ' active' : ''}`}>
         <span className="skill-nm">
@@ -93,7 +101,10 @@ export function SkillTree({
           <button
             type="button"
             disabled={!canDec}
-            onClick={() => lower(skill, level - 1)}
+            title="Strg+Klick: auf Minimum"
+            onClick={(e) =>
+              lower(skill, e.ctrlKey || e.metaKey ? minAllowed : level - 1)
+            }
             aria-label={`${skill.name} verringern`}
           >
             −
@@ -104,7 +115,10 @@ export function SkillTree({
           <button
             type="button"
             disabled={!canInc}
-            onClick={() => raise(skill, level + 1)}
+            title="Strg+Klick: auf Maximum"
+            onClick={(e) =>
+              raise(skill, e.ctrlKey || e.metaKey ? skill.maxLevel : level + 1)
+            }
             aria-label={`${skill.name} erhöhen`}
           >
             +
@@ -122,10 +136,16 @@ export function SkillTree({
     byClass.set(s.classId, arr)
   }
 
+  // Nur Töpfe zeigen, für die die Klasse tatsächlich punktekostende Skills hat
+  // (Platin-Skills verbrauchen keine Punkte und zählen nicht für die Topf-Anzeige).
+  const poolsPresent = new Set(
+    available.filter((s) => !s.platinum).map((s) => skillPool(s)),
+  )
+  const labels = poolLabels(classId)
   const pools: { key: string; label: string; info: PoolInfo }[] = [
-    { key: 'novice', label: 'Novice', info: points.novice },
-    { key: 'first', label: 'First-Class', info: points.first },
-    { key: 'second', label: 'Second-Class', info: points.second },
+    { key: 'novice', label: labels.novice, info: points.novice },
+    { key: 'first', label: labels.first, info: points.first },
+    { key: 'second', label: labels.second, info: points.second },
   ]
 
   return (
@@ -133,7 +153,7 @@ export function SkillTree({
       <div className="skill-head">
         <div className="skill-budgets">
           {pools
-            .filter((p) => p.info.cap > 0 || p.info.spent > 0)
+            .filter((p) => poolsPresent.has(p.key as 'novice' | 'first' | 'second'))
             .map((p) => (
               <span
                 key={p.key}

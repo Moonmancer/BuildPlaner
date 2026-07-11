@@ -36,7 +36,7 @@ const TREES: Record<string, TreeEntry[]> = {
   novice: [
     { id: 'NV_BASIC', name: 'Basic Skill', maxLevel: 9 },
     { id: 'NV_FIRSTAID', name: 'First Aid', maxLevel: 1, platinum: true },
-    { id: 'NV_TRICKDEAD', name: 'Play Dead', maxLevel: 1, platinum: true, inheritable: false },
+    { id: 'NV_TRICKDEAD', name: 'Play Dead', maxLevel: 1, platinum: true },
   ],
   swordsman: [
     { id: 'SM_SWORD', name: 'Sword Mastery', maxLevel: 10 },
@@ -565,6 +565,103 @@ const TREES: Record<string, TreeEntry[]> = {
     { id: 'SL_KASHU', name: 'Kashu', maxLevel: 1, requires: [R('TK_VIRTUES', 1)], platinum: true },
     { id: 'SL_WEAVESELF', name: 'Weave Self', maxLevel: 1, platinum: true },
   ],
+  // ---------- Rebirth / Transcendent (nur die neuen Trans-Skills; Basis via Vererbung) ----------
+  // High Novice hat keinen eigenen Baum: erbt Basic Skill / First Aid / Play Dead vom Novice-Baum.
+  lordknight: [
+    { id: 'LK_AURABLADE', name: 'Aura Blade', maxLevel: 5, requires: [R('SM_BASH', 5), R('SM_MAGNUM', 5), R('SM_TWOHAND', 5)] },
+    { id: 'LK_PARRYING', name: 'Parrying', maxLevel: 10, requires: [R('SM_TWOHAND', 10), R('SM_PROVOKE', 5), R('KN_TWOHANDQUICKEN', 3)] },
+    { id: 'LK_CONCENTRATION', name: 'Concentration', maxLevel: 5, requires: [R('SM_RECOVERY', 5), R('KN_SPEARMASTERY', 5), R('KN_RIDING', 1)] },
+    { id: 'LK_TENSIONRELAX', name: 'Tension Relax', maxLevel: 1, requires: [R('SM_RECOVERY', 10), R('SM_PROVOKE', 5), R('SM_ENDURE', 3)] },
+    { id: 'LK_BERSERK', name: 'Berserk', maxLevel: 1 },
+    { id: 'LK_SPIRALPIERCE', name: 'Spiral Pierce', maxLevel: 5, requires: [R('KN_SPEARMASTERY', 10), R('KN_PIERCE', 5), R('KN_SPEARSTAB', 5), R('KN_RIDING', 1)] },
+    { id: 'LK_HEADCRUSH', name: 'Head Crush', maxLevel: 5, requires: [R('KN_SPEARMASTERY', 9), R('KN_RIDING', 1)] },
+    { id: 'LK_JOINTBEAT', name: 'Joint Beat', maxLevel: 10, requires: [R('KN_SPEARMASTERY', 9), R('KN_CAVALIERMASTERY', 3), R('LK_HEADCRUSH', 3)] },
+  ],
+  highpriest: [
+    { id: 'PR_SLOWPOISON', name: 'Slow Poison', maxLevel: 4, requires: [R('PR_STRECOVERY', 1)] },
+    { id: 'HP_ASSUMPTIO', name: 'Assumptio', maxLevel: 5, requires: [R('AL_ANGELUS', 1), R('MG_SRECOVERY', 3), R('PR_IMPOSITIO', 3)] },
+    { id: 'HP_BASILICA', name: 'Basilica', maxLevel: 5, requires: [R('PR_GLORIA', 2), R('MG_SRECOVERY', 1), R('PR_KYRIE', 3)] },
+    { id: 'HP_MEDITATIO', name: 'Meditatio', maxLevel: 10, requires: [R('PR_ASPERSIO', 3), R('MG_SRECOVERY', 5), R('PR_LEXDIVINA', 5)] },
+    { id: 'HP_MANARECHARGE', name: 'Mana Recharge', maxLevel: 5, requires: [R('PR_MACEMASTERY', 10), R('AL_DEMONBANE', 10)] },
+  ],
+  highwizard: [
+    { id: 'HW_SOULDRAIN', name: 'Soul Drain', maxLevel: 10, requires: [R('MG_SRECOVERY', 5), R('MG_SOULSTRIKE', 7)] },
+    { id: 'HW_MAGICCRASHER', name: 'Stave Crasher', maxLevel: 1, requires: [R('MG_SRECOVERY', 1)] },
+    { id: 'HW_MAGICPOWER', name: 'Mystical Amplification', maxLevel: 10 },
+    { id: 'HW_NAPALMVULCAN', name: 'Napalm Vulcan', maxLevel: 5, requires: [R('MG_NAPALMBEAT', 5)] },
+    { id: 'HW_GANBANTEIN', name: 'Ganbantein', maxLevel: 1, requires: [R('WZ_ESTIMATION', 1), R('WZ_ICEWALL', 1)] },
+    { id: 'HW_GRAVITATION', name: 'Gravitational Field', maxLevel: 5, requires: [R('HW_MAGICCRASHER', 1), R('HW_MAGICPOWER', 10), R('WZ_QUAGMIRE', 1)] },
+  ],
+  whitesmith: [
+    { id: 'WS_MELTDOWN', name: 'Melt Down', maxLevel: 10, requires: [R('BS_SKINTEMPER', 3), R('BS_HILTBINDING', 1), R('BS_WEAPONRESEARCH', 5), R('BS_OVERTHRUST', 3)] },
+    { id: 'WS_CARTBOOST', name: 'Cart Boost', maxLevel: 1, requires: [R('MC_PUSHCART', 5), R('MC_CARTREVOLUTION', 1), R('MC_CHANGECART', 1), R('BS_HILTBINDING', 1)] },
+    { id: 'WS_WEAPONREFINE', name: 'Weapon Refine', maxLevel: 10, requires: [R('BS_WEAPONRESEARCH', 10)] },
+    { id: 'WS_CARTTERMINATION', name: 'Cart Termination', maxLevel: 10, requires: [R('MC_MAMMONITE', 10), R('BS_HAMMERFALL', 5), R('WS_CARTBOOST', 1)] },
+    { id: 'WS_OVERTHRUSTMAX', name: 'Maximum Power Thrust', maxLevel: 5, requires: [R('BS_OVERTHRUST', 5)] },
+  ],
+  sniper: [
+    { id: 'SN_SIGHT', name: 'True Sight', maxLevel: 10, requires: [R('AC_OWL', 10), R('AC_VULTURE', 10), R('AC_CONCENTRATION', 10), R('HT_FALCON', 1)] },
+    { id: 'SN_FALCONASSAULT', name: 'Falcon Assault', maxLevel: 5, requires: [R('HT_STEELCROW', 3), R('AC_VULTURE', 5), R('HT_BLITZBEAT', 5), R('HT_FALCON', 1)] },
+    { id: 'SN_SHARPSHOOTING', name: 'Focused Arrow Strike', maxLevel: 5, requires: [R('AC_CONCENTRATION', 10), R('AC_DOUBLE', 5)] },
+    { id: 'SN_WINDWALK', name: 'Wind Walk', maxLevel: 10, requires: [R('AC_CONCENTRATION', 9)] },
+  ],
+  assassincross: [
+    { id: 'ASC_KATAR', name: 'Advanced Katar Mastery', maxLevel: 5, requires: [R('TF_DOUBLE', 5), R('AS_KATAR', 7)] },
+    { id: 'ASC_CDP', name: 'Create Deadly Poison', maxLevel: 1, requires: [R('TF_POISON', 10), R('TF_DETOXIFY', 1), R('AS_ENCHANTPOISON', 5)] },
+    { id: 'ASC_EDP', name: 'Enchant Deadly Poison', maxLevel: 5, requires: [R('ASC_CDP', 1)] },
+    { id: 'ASC_BREAKER', name: 'Soul Breaker', maxLevel: 10, requires: [R('TF_DOUBLE', 5), R('AS_CLOAKING', 3), R('AS_ENCHANTPOISON', 6), R('TF_POISON', 5)] },
+    { id: 'ASC_METEORASSAULT', name: 'Meteor Assault', maxLevel: 10, requires: [R('AS_RIGHT', 3), R('AS_KATAR', 5), R('AS_SONICBLOW', 5), R('ASC_BREAKER', 1)] },
+  ],
+  paladin: [
+    { id: 'PA_PRESSURE', name: 'Pressure', maxLevel: 5, requires: [R('SM_ENDURE', 5), R('CR_TRUST', 5), R('CR_SHIELDCHARGE', 2)] },
+    { id: 'PA_SACRIFICE', name: 'Sacrifice', maxLevel: 5, requires: [R('SM_ENDURE', 1), R('CR_TRUST', 5), R('CR_DEVOTION', 3)] },
+    { id: 'PA_GOSPEL', name: 'Battle Chant', maxLevel: 10, requires: [R('CR_TRUST', 8), R('AL_DP', 3), R('AL_DEMONBANE', 5)] },
+    { id: 'PA_SHIELDCHAIN', name: 'Shield Chain', maxLevel: 5, requires: [R('CR_SHIELDBOOMERANG', 5)] },
+  ],
+  champion: [
+    { id: 'CH_PALMSTRIKE', name: 'Palm Push Strike', maxLevel: 5, requires: [R('MO_IRONHAND', 7), R('MO_CALLSPIRITS', 5)] },
+    { id: 'CH_TIGERFIST', name: 'Tiger Knuckle Fist', maxLevel: 5, requires: [R('MO_IRONHAND', 5), R('MO_TRIPLEATTACK', 5), R('MO_CALLSPIRITS', 5), R('MO_COMBOFINISH', 3)] },
+    { id: 'CH_CHAINCRUSH', name: 'Chain Crush Combo', maxLevel: 10, requires: [R('MO_IRONHAND', 5), R('MO_CALLSPIRITS', 5), R('CH_TIGERFIST', 2)] },
+    { id: 'CH_SOULCOLLECT', name: 'Zen', maxLevel: 1, requires: [R('MO_CALLSPIRITS', 5), R('MO_ABSORBSPIRITS', 1), R('MO_EXPLOSIONSPIRITS', 5)] },
+  ],
+  professor: [
+    { id: 'PF_HPCONVERSION', name: 'Indulge', maxLevel: 5, requires: [R('MG_SRECOVERY', 1), R('SA_MAGICROD', 1)] },
+    { id: 'PF_SOULCHANGE', name: 'Soul Exchange', maxLevel: 1, requires: [R('SA_MAGICROD', 3), R('SA_SPELLBREAKER', 2)] },
+    { id: 'PF_SOULBURN', name: 'Soul Burn', maxLevel: 5, requires: [R('SA_CASTCANCEL', 5), R('SA_MAGICROD', 3), R('SA_DISPELL', 3)] },
+    { id: 'PF_MINDBREAKER', name: 'Mind Breaker', maxLevel: 5, requires: [R('MG_SRECOVERY', 3), R('PF_SOULBURN', 1)] },
+    { id: 'PF_MEMORIZE', name: 'Foresight', maxLevel: 1, requires: [R('SA_ADVANCEDBOOK', 5), R('SA_FREECAST', 5), R('SA_AUTOSPELL', 1)] },
+    { id: 'PF_FOGWALL', name: 'Wall of Fog', maxLevel: 1, requires: [R('SA_DELUGE', 2), R('SA_VIOLENTGALE', 2)] },
+    { id: 'PF_SPIDERWEB', name: 'Fiber Lock', maxLevel: 1, requires: [R('SA_DRAGONOLOGY', 4)] },
+    { id: 'PF_DOUBLECASTING', name: 'Double Casting', maxLevel: 5, requires: [R('SA_AUTOSPELL', 1)] },
+  ],
+  stalker: [
+    { id: 'ST_CHASEWALK', name: 'Chase Walk', maxLevel: 5, requires: [R('TF_HIDING', 5), R('RG_TUNNELDRIVE', 3)] },
+    { id: 'ST_REJECTSWORD', name: 'Counter Instinct', maxLevel: 5, requires: [R('RG_STRIPWEAPON', 1)] },
+    { id: 'ST_PRESERVE', name: 'Preserve', maxLevel: 1, requires: [R('RG_PLAGIARISM', 10)] },
+    { id: 'ST_FULLSTRIP', name: 'Full Strip', maxLevel: 5, requires: [R('RG_STRIPWEAPON', 5), R('RG_STRIPSHIELD', 5), R('RG_STRIPARMOR', 5), R('RG_STRIPHELM', 5)] },
+  ],
+  creator: [
+    { id: 'CR_SLIMPITCHER', name: 'Slim Potion Pitcher', maxLevel: 10, requires: [R('AM_POTIONPITCHER', 5)] },
+    { id: 'CR_FULLPROTECTION', name: 'Full Chemical Protection', maxLevel: 5, requires: [R('AM_CP_WEAPON', 5), R('AM_CP_SHIELD', 5), R('AM_CP_ARMOR', 5), R('AM_CP_HELM', 5)] },
+    { id: 'CR_ACIDDEMONSTRATION', name: 'Acid Demonstration', maxLevel: 10, requires: [R('AM_DEMONSTRATION', 5), R('AM_ACIDTERROR', 5)] },
+    { id: 'CR_CULTIVATION', name: 'Plant Cultivation', maxLevel: 2 },
+  ],
+  clown: [
+    { id: 'CG_ARROWVULCAN', name: 'Arrow Vulcan', maxLevel: 10, requires: [R('AC_SHOWER', 5), R('BA_MUSICALSTRIKE', 1)] },
+    { id: 'CG_MOONLIT', name: 'Sheltering Bliss', maxLevel: 5, requires: [R('AC_CONCENTRATION', 5), R('BA_MUSICALLESSON', 7)] },
+    { id: 'CG_MARIONETTE', name: 'Marionette Control', maxLevel: 1, requires: [R('AC_CONCENTRATION', 5), R('BA_MUSICALLESSON', 5)] },
+    { id: 'CG_LONGINGFREEDOM', name: 'Longing for Freedom', maxLevel: 5, requires: [R('BA_MUSICALLESSON', 10), R('CG_MARIONETTE', 1)] },
+    { id: 'CG_HERMODE', name: "Wand of Hermode", maxLevel: 5, requires: [R('AC_CONCENTRATION', 10), R('BA_MUSICALLESSON', 10)] },
+    { id: 'CG_TAROTCARD', name: 'Tarot Card of Fate', maxLevel: 5, requires: [R('AC_CONCENTRATION', 10), R('BA_DISSONANCE', 3)] },
+  ],
+  gypsy: [
+    { id: 'CG_ARROWVULCAN', name: 'Arrow Vulcan', maxLevel: 10, requires: [R('AC_SHOWER', 5), R('DC_THROWARROW', 1)] },
+    { id: 'CG_MOONLIT', name: 'Sheltering Bliss', maxLevel: 5, requires: [R('AC_CONCENTRATION', 5), R('DC_DANCINGLESSON', 7)] },
+    { id: 'CG_MARIONETTE', name: 'Marionette Control', maxLevel: 1, requires: [R('AC_CONCENTRATION', 5), R('DC_DANCINGLESSON', 5)] },
+    { id: 'CG_LONGINGFREEDOM', name: 'Longing for Freedom', maxLevel: 5, requires: [R('DC_DANCINGLESSON', 10), R('CG_MARIONETTE', 1)] },
+    { id: 'CG_HERMODE', name: "Wand of Hermode", maxLevel: 5, requires: [R('AC_CONCENTRATION', 10), R('DC_DANCINGLESSON', 10)] },
+    { id: 'CG_TAROTCARD', name: 'Tarot Card of Fate', maxLevel: 5, requires: [R('AC_CONCENTRATION', 10), R('DC_UGLYDANCE', 3)] },
+  ],
 }
 
 // Anzeigenamen global (id -> Name, erstes Vorkommen) für Nachschlagen.
@@ -615,6 +712,41 @@ export function skillPool(skill: SkillDef): SkillPool {
   if (tier === 'novice') return 'novice'
   if (tier === 'first') return 'first'
   return 'second'
+}
+
+export interface PoolLabels {
+  novice: string
+  first: string
+  second: string
+}
+
+// Rebirth-Namen der First-Class-Stufe (im RO-Client so geschrieben).
+const REBIRTH_FIRST_NAME: Record<string, string> = {
+  swordsman: 'High Swordman',
+  mage: 'High Mage',
+  archer: 'High Archer',
+  merchant: 'High Merchant',
+  thief: 'High Thief',
+  acolyte: 'High Acolyte',
+}
+
+/** Anzeigenamen der drei Skill-Töpfe, passend zur Klasse des Builds.
+ *  Bei Rebirth die High-/Trans-Namen (z.B. High Novice / High Swordman / Lord Knight),
+ *  sonst die Klassen der Vererbungskette (Novice / Swordsman / Knight). Der Second-Topf
+ *  trägt den Namen der Zielklasse selbst (gilt auch für Expanded wie Gunslinger). */
+export function poolLabels(classId: string | null | undefined): PoolLabels {
+  const chain = classChain(classId)
+  const cls = chain[chain.length - 1]
+  const rebirth = cls?.isRebirth ?? false
+  const firstCls = chain.find((c) => c.tier === 'first')
+  const novice = rebirth ? 'High Novice' : 'Novice'
+  const first = rebirth
+    ? firstCls
+      ? (REBIRTH_FIRST_NAME[firstCls.id] ?? `High ${firstCls.name}`)
+      : 'First-Class'
+    : (firstCls?.name ?? 'First-Class')
+  const second = cls?.name ?? 'Second-Class'
+  return { novice, first, second }
 }
 
 /** Lernt einen Skill auf `targetLevel` und lernt benötigte Vor-Skills rekursiv mit.
