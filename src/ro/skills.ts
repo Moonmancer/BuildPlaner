@@ -604,7 +604,13 @@ export function skillsForClass(classId: string | null | undefined): SkillDef[] {
       if (seen.has(e.id)) continue
       if (c.id !== ownId && e.inheritable === false) continue
       seen.add(e.id)
-      out.push({ ...e, requires: e.requires ?? [], classId: c.id })
+      let requires = e.requires ?? []
+      // Jede First-Class-Fähigkeit setzt Basic Skill 9 voraus (entspricht dem
+      // Jobwechsel Novice -> First Class). Wird per Auto-Lernen mitgezogen.
+      if (c.tier === 'first' && !requires.some((r) => r.id === 'NV_BASIC')) {
+        requires = [...requires, R('NV_BASIC', 9)]
+      }
+      out.push({ ...e, requires, classId: c.id })
     }
   }
   return out
