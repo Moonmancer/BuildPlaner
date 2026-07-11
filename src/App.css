@@ -302,6 +302,15 @@ button.btn-danger {
   opacity: 0.75;
   white-space: nowrap;
 }
+.arcadia-link {
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-decoration: none;
+  margin-right: auto;
+}
+.arcadia-link:hover {
+  text-decoration: underline;
+}
 .build-list ul {
   list-style: none;
   margin: 0;

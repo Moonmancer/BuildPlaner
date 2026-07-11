@@ -4,6 +4,7 @@ import { getClass } from '../ro/classes'
 import { childrenOf } from '../groupTree'
 import { useConfirm, useConfirmChoice } from './ConfirmDialog'
 import { dataToXml, parseXml, downloadFile } from '../xml'
+import { decodeArcadiaToBuild } from '../arcadia'
 import type { Build, BuildGroup } from '../types'
 
 /** Linke Spalte: Builds anlegen, filtern, in (verschachtelte) Gruppen einordnen,
@@ -26,10 +27,13 @@ export function BuildList() {
     setBuildGroups,
     reorderBuilds,
     importCollection,
+    importBuild,
   } = useStore()
   const confirm = useConfirm()
   const confirmChoice = useConfirmChoice()
   const fileRef = useRef<HTMLInputElement>(null)
+  const [showArcadia, setShowArcadia] = useState(false)
+  const [arcadiaUrl, setArcadiaUrl] = useState('')
 
   const [name, setName] = useState('')
   const [filter, setFilter] = useState('')
@@ -108,6 +112,23 @@ export function BuildList() {
       message: `${parsed.builds.length} Build(s) und ${parsed.groups.length} Gruppe(n) hinzugefügt.`,
       confirmLabel: 'OK',
     })
+  }
+
+  async function submitArcadia(e: FormEvent) {
+    e.preventDefault()
+    const build = decodeArcadiaToBuild(arcadiaUrl)
+    if (!build) {
+      await confirm({
+        title: 'Import fehlgeschlagen',
+        message: 'Kein gültiger Arcadia-Link (calc.arcadia-online.org).',
+        confirmLabel: 'OK',
+      })
+      return
+    }
+    if (!(await guard())) return
+    importBuild(build)
+    setArcadiaUrl('')
+    setShowArcadia(false)
   }
 
   function onDropOnBuild(targetId: string) {
@@ -283,6 +304,14 @@ export function BuildList() {
         >
           ⬆ Import (XML)
         </button>
+        <button
+          type="button"
+          className="ghost small"
+          onClick={() => setShowArcadia((v) => !v)}
+          title="Build aus einem calc.arcadia-online.org-Link importieren"
+        >
+          ⚔ Arcadia
+        </button>
         <input
           ref={fileRef}
           type="file"
@@ -291,6 +320,20 @@ export function BuildList() {
           onChange={onImportFile}
         />
       </div>
+
+      {showArcadia && (
+        <form className="new-build" onSubmit={submitArcadia}>
+          <input
+            type="text"
+            value={arcadiaUrl}
+            placeholder="Arcadia-Link einfügen…"
+            onChange={(e) => setArcadiaUrl(e.target.value)}
+            aria-label="Arcadia-Link"
+            autoFocus
+          />
+          <button type="submit">Import</button>
+        </form>
+      )}
 
       {showGroupInput && (
         <form className="new-build" onSubmit={submitGroup}>

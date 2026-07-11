@@ -3,6 +3,7 @@ import type { Milestone } from '../types'
 import { StatsEditor } from './StatsEditor'
 import { SkillTree } from './SkillTree'
 import { useConfirm } from './ConfirmDialog'
+import { encodeArcadia } from '../arcadia'
 
 interface Props {
   milestone: Milestone
@@ -34,6 +35,15 @@ export function MilestoneCard({
   function patch(p: Partial<Omit<Milestone, 'id'>>) {
     updateMilestone(m.id, p)
   }
+
+  // Arcadia-Link für diesen Snapshot (nur wenn die Klasse dort existiert).
+  const arcadiaUrl = encodeArcadia(
+    classId,
+    m.baseLevel,
+    m.jobLevel,
+    m.stats,
+    m.skills,
+  )
 
   return (
     <details
@@ -124,6 +134,17 @@ export function MilestoneCard({
         />
 
         <div className="ms-actions">
+          {arcadiaUrl && (
+            <a
+              className="arcadia-link"
+              href={arcadiaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Diesen Milestone im Arcadia-Rechner öffnen (Klasse, Level, Stats, Kampf-Skills)"
+            >
+              ⚔ In Arcadia öffnen ↗
+            </a>
+          )}
           <button
             type="button"
             className="delete-text"
