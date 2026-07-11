@@ -433,8 +433,6 @@ const TREES: Record<string, TreeEntry[]> = {
     { id: 'TF_HIDING', name: 'Hiding', maxLevel: 10, requires: [R('TF_STEAL', 5)] },
     { id: 'TF_POISON', name: 'Envenom', maxLevel: 10 },
     { id: 'TF_DETOXIFY', name: 'Detoxify', maxLevel: 1, requires: [R('TF_POISON', 3)] },
-    { id: 'ALL_BUYING_STORE', name: 'Buying Store', maxLevel: 1, requires: [R('MC_VENDING', 1)], platinum: true },
-    { id: 'MC_CARTDECORATE', name: 'Cart Decoration', maxLevel: 1, platinum: true },
   ],
   gunslinger: [
     { id: 'GS_GLITTERING', name: 'Flip the Coin', maxLevel: 5 },
@@ -571,21 +569,14 @@ const TREES: Record<string, TreeEntry[]> = {
 
 // Anzeigenamen global (id -> Name, erstes Vorkommen) für Nachschlagen.
 const SKILL_NAMES: Record<string, string> = {}
-const PLATINUM = new Set<string>()
 for (const entries of Object.values(TREES)) {
   for (const e of entries) {
     if (!(e.id in SKILL_NAMES)) SKILL_NAMES[e.id] = e.name
-    if (e.platinum) PLATINUM.add(e.id)
   }
 }
 
 export function skillName(id: string): string {
   return SKILL_NAMES[id] ?? id
-}
-
-/** Ob ein Skill ein Platin-/Quest-Skill ist (kostet keinen Skillpunkt). */
-export function isPlatinum(id: string): boolean {
-  return PLATINUM.has(id)
 }
 
 /** Alle für eine Klasse verfügbaren Skills: eigener Baum + geerbte Bäume der
@@ -688,23 +679,25 @@ export function skillPoints(
   let secondSpent = 0
   for (const s of available) {
     const lvl = levels[s.id] ?? 0
-    if (lvl <= 0 || isPlatinum(s.id)) continue
+    if (lvl <= 0 || s.platinum) continue
     const pool = skillPool(s)
     if (pool === 'novice') noviceSpent += lvl
     else if (pool === 'first') firstSpent += lvl
     else secondSpent += lvl
   }
+  // Skillpunkte je Ebene = Job-Level - 1 (Start bei Job-Level 1 = 0 Punkte).
   const noviceClass = chain.find((c) => c.tier === 'novice')
   const firstAncestor = chain.find((c) => c.tier === 'first')
   const isAdvanced = cls?.tier === 'second' || cls?.tier === 'transcendent'
-  const firstCap = isAdvanced
+  const firstBase = isAdvanced
     ? earlyJobChangeLevel
     : (firstAncestor?.maxJobLevel ?? 0)
-  const secondCap =
+  const secondBase =
     cls && cls.tier !== 'novice' && cls.tier !== 'first' ? cls.maxJobLevel : 0
+  const cap = (jobLevel: number) => Math.max(0, jobLevel - 1)
   return {
-    novice: { spent: noviceSpent, cap: noviceClass?.maxJobLevel ?? 0 },
-    first: { spent: firstSpent, cap: firstCap },
-    second: { spent: secondSpent, cap: secondCap },
+    novice: { spent: noviceSpent, cap: cap(noviceClass?.maxJobLevel ?? 0) },
+    first: { spent: firstSpent, cap: cap(firstBase) },
+    second: { spent: secondSpent, cap: cap(secondBase) },
   }
 }
