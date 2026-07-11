@@ -6,6 +6,7 @@ import {
   statRaiseCost,
   minLevelForSpent,
   hexagonViolations,
+  HEXAGON_MIN_COST,
 } from '../ro/stats'
 
 interface Props {
@@ -25,8 +26,10 @@ export function StatsEditor({
   onSetBaseLevel,
 }: Props) {
   const budget = statBudget(stats, baseLevel, isRebirth)
-  // Hexagon-Regel gilt nur für Nicht-Rebirth-Klassen.
-  const hexIssues = isRebirth ? [] : hexagonViolations(stats)
+  // Hexagon-Regel gilt nur für Nicht-Rebirth-Klassen und erst, wenn genug Punkte
+  // verteilt sind, um sie überhaupt erfüllen zu können (sonst nur „noch nicht verteilt").
+  const hexIssues =
+    isRebirth || budget.spent < HEXAGON_MIN_COST ? [] : hexagonViolations(stats)
 
   function setStat(key: StatKey, value: number) {
     const v = Number.isFinite(value)

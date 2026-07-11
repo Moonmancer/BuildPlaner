@@ -58,6 +58,11 @@ export function hexagonViolations(stats: Stats): [StatKey, StatKey][] {
   return HEXAGON_PAIRS.filter(([a, b]) => stats[a] + stats[b] < 10)
 }
 
+/** Mindest-Statuspunkte, um die Hexagon-Regel zu erfüllen: 3 Paare, je 16 Punkte
+ *  (ein Stat von 1 auf 9), also 48. Erst ab so vielen verteilten Punkten ist ein
+ *  Verstoß überhaupt aussagekräftig – vorher ist der Char nur „noch nicht verteilt". */
+export const HEXAGON_MIN_COST = 3 * statTotalCost(9)
+
 export interface StatBudget {
   spent: number
   available: number
