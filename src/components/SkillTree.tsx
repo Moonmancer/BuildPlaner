@@ -231,7 +231,8 @@ export function SkillTree({
     return 'A'
   }
   const chainIds = classChain(classId).map((c) => c.id)
-  const gridBuckets = (['A', 'B'] as const)
+  // Reihenfolge im Ingame-Raster: zuerst Topf B (2nd/Rebirth), dann A (Novice/1st).
+  const gridBuckets = (['B', 'A'] as const)
     .map((key) => {
       const ids = chainIds.filter((id) => byClass.has(id) && bucketOf(id) === key)
       return {
