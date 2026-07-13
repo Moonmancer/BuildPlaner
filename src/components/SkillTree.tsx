@@ -1,7 +1,23 @@
 import { useMemo, useState } from 'react'
 import type { SkillLevels } from '../types'
 import { getClass } from '../ro/classes'
-import { HERC_NAMES } from '../hercNames'
+import { ALT_NAMES } from '../altNames'
+
+/** Zeigt den Skillnamen; bei inhaltlich abweichenden Alternativnamen (Hercules/rAthena)
+ *  als Suffix „(Alt: …)". Rein formatierte Varianten (normalisiert gleich) werden weggelassen. */
+const normName = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+function displayName(id: string, name: string): string {
+  const seen = new Set([normName(name)])
+  const alts: string[] = []
+  for (const a of ALT_NAMES[id] ?? []) {
+    const k = normName(a)
+    if (!seen.has(k)) {
+      seen.add(k)
+      alts.push(a)
+    }
+  }
+  return alts.length ? `${name} (Alt: ${alts.join(', ')})` : name
+}
 import {
   skillsForClass,
   dependentsBlocking,
@@ -91,9 +107,7 @@ export function SkillTree({
     return (
       <div className={`skill-row2${level > 0 ? ' active' : ''}`}>
         <span className="skill-nm">
-          {HERC_NAMES[skill.id] && HERC_NAMES[skill.id] !== skill.name
-            ? `${skill.name} (Herc: ${HERC_NAMES[skill.id]})`
-            : skill.name}
+          {displayName(skill.id, skill.name)}
           {skill.platinum && (
             <span className="skill-quest" title="Platin-/Quest-Skill – kostet keinen Skillpunkt">
               Quest
