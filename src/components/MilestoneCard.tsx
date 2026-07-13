@@ -123,6 +123,11 @@ export function MilestoneCard({
               href={arcadiaUrl}
               target="_blank"
               rel="noopener noreferrer"
+              // Immer in neuem Tab öffnen (auch in der installierten PWA).
+              onClick={(e) => {
+                e.preventDefault()
+                window.open(arcadiaUrl, '_blank', 'noopener,noreferrer')
+              }}
               title="Diesen Milestone im Arcadia-Rechner öffnen (Klasse, Level, Stats, Kampf-Skills)"
             >
               ⚔ In Arcadia öffnen ↗
