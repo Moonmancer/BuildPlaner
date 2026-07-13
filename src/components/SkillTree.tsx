@@ -34,10 +34,28 @@ import { RO_ID_TO_SKILL } from '../roSkillIds'
 // Unsere Skill-Konstante -> numerische RO-ID (für die Ingame-Icons von db.irowiki.org).
 const SKILL_TO_RO_ID: Record<string, number> = {}
 for (const [num, id] of Object.entries(RO_ID_TO_SKILL)) SKILL_TO_RO_ID[id] = Number(num)
-const iconUrl = (id: string) =>
-  SKILL_TO_RO_ID[id]
+
+// Server-spezifische Platin-Skills (Arcadia) ohne RO-ID: eigene, lokal abgelegte Icons
+// (public/skill-icons/<ID>.png, gezogen aus wiki.arcadia-online.org/Platinum_Skills).
+const CUSTOM_ICON_IDS = new Set([
+  'GS_SIEGESTANCE',
+  'GS_ENFEEBLEROUND',
+  'GS_BLASTROUND',
+  'NJ_METSUBUSHI',
+  'NJ_TAIJUTSU',
+  'SG_NOVA',
+  'SL_KASHU',
+  'SL_WEAVESELF',
+  'TK_VIRTUES',
+])
+const iconUrl = (id: string) => {
+  if (CUSTOM_ICON_IDS.has(id)) {
+    return `${import.meta.env.BASE_URL}skill-icons/${id}.png`
+  }
+  return SKILL_TO_RO_ID[id]
     ? `https://db.irowiki.org/image/skill/${SKILL_TO_RO_ID[id]}.png`
     : null
+}
 
 interface Props {
   classId: string | null
