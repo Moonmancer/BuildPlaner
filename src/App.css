@@ -388,7 +388,8 @@ button.btn-danger {
 }
 .skill-cell .cell-q {
   position: absolute;
-  top: 1px;
+  /* unterhalb der Namens-Überschrift, damit sich beides nicht überschneidet */
+  top: 15px;
   right: 2px;
   font-size: 8px;
   font-weight: 600;
