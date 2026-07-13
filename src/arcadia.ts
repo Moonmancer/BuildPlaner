@@ -59,7 +59,7 @@ for (const [job, cls] of Object.entries(ARCADIA_JOB_TO_CLASS)) {
 
 // --- m_JobBuff: geordnete Arcadia-Skill-Nummern je Job (Position = Skill-Slot im Hash) ---
 const M_JOBBUFF: Record<number, number[]> = {
-  0: [], 1: [3, 4, 12, 9, 392], 2: [13, 14, 392], 3: [23, 24, 392],
+  0: [], 1: [3, 4, 12, 9, 392], 2: [13, 14, 392], 3: [23, 24, 392], // Job 0 (Novice) hat keine Buff-Skills
   4: [38, 39, 42, 392], 5: [58, 392], 6: [68, 392],
   7: [3, 4, 12, 69, 74, 78, 386, 9], 8: [13, 14, 79, 80, 81, 381], 9: [23, 24, 89],
   10: [38, 39, 42, 116, 118, 119, 390], 11: [58],
