@@ -34,6 +34,33 @@
   opacity: 0.6;
 }
 
+/* ---------- Backup-Leiste (PWA / Datei-Sync) ---------- */
+.backup-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: -8px 0 24px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  font-size: 0.8rem;
+}
+.backup-label {
+  opacity: 0.85;
+}
+.backup-label.ok {
+  color: #2e9e5b;
+  opacity: 1;
+  font-weight: 600;
+}
+.backup-label.warn {
+  color: #d08a1a;
+  opacity: 1;
+  font-weight: 600;
+}
+
 /* ---------- Layout ---------- */
 .layout {
   display: grid;

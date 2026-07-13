@@ -77,6 +77,7 @@ type Action =
   | { type: 'deleteGroup'; groupId: string }
   | { type: 'importBuild'; build: Build }
   | { type: 'importCollection'; builds: Build[]; groups: BuildGroup[] }
+  | { type: 'replaceAll'; builds: Build[]; groups: BuildGroup[] }
 
 function newMilestone(): Milestone {
   return {
@@ -371,6 +372,18 @@ function reducer(state: State, action: Action): State {
         groups: [...state.groups, ...groups],
       }
     }
+    case 'replaceAll': {
+      // Komplette Datenmenge ersetzen (Backup-Wiederherstellung, IDs bleiben erhalten).
+      const selectedId = action.builds[0]?.id ?? null
+      return {
+        ...state,
+        builds: action.builds,
+        groups: action.groups,
+        selectedId,
+        draft: draftFor(action.builds, selectedId),
+        dirty: false,
+      }
+    }
     default:
       return state
   }
@@ -420,6 +433,7 @@ interface Store {
   deleteGroup: (groupId: string) => void
   importBuild: (build: Build) => void
   importCollection: (builds: Build[], groups: BuildGroup[]) => void
+  replaceAll: (builds: Build[], groups: BuildGroup[]) => void
 }
 
 const StoreContext = createContext<Store | null>(null)
@@ -471,6 +485,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       importBuild: (build) => dispatch({ type: 'importBuild', build }),
       importCollection: (builds, groups) =>
         dispatch({ type: 'importCollection', builds, groups }),
+      replaceAll: (builds, groups) =>
+        dispatch({ type: 'replaceAll', builds, groups }),
     }),
     [state],
   )
