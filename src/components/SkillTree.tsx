@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { SkillLevels } from '../types'
-import { getClass } from '../ro/classes'
+import { getClass, classChain } from '../ro/classes'
 import { ALT_NAMES } from '../altNames'
 
 /** Zeigt den Skillnamen; bei inhaltlich abweichenden Alternativnamen (Hercules/rAthena)
@@ -197,16 +197,17 @@ export function SkillTree({
     )
   }
 
-  // Ingame-Raster einer Klassengruppe (7 Spalten, Positionen aus skilltreeview.lub).
-  function gridFor(skills: SkillDef[]) {
-    const gmap = SKILL_GRID[skills[0].classId] ?? {}
-    const placed = skills.filter((s) => s.id in gmap)
-    const extras = skills.filter((s) => !(s.id in gmap))
-    const maxIdx = placed.reduce((m, s) => Math.max(m, gmap[s.id]), -1)
+  // Ingame-Raster (7 Spalten, Positionen aus skilltreeview.lub). Position je Skill über
+  // die liefernde Klasse – so lassen sich mehrere Klassen-Raster verlustfrei überlagern.
+  const posOf = (s: SkillDef): number | undefined => SKILL_GRID[s.classId]?.[s.id]
+  function gridForSkills(skills: SkillDef[]) {
+    const placed = skills.filter((s) => posOf(s) !== undefined)
+    const extras = skills.filter((s) => posOf(s) === undefined)
+    const maxIdx = placed.reduce((m, s) => Math.max(m, posOf(s)!), -1)
     const cells: (SkillDef | null)[] = Array(
       maxIdx >= 0 ? (Math.floor(maxIdx / GRID_COLS) + 1) * GRID_COLS : 0,
     ).fill(null)
-    for (const s of placed) cells[gmap[s.id]] = s
+    for (const s of placed) cells[posOf(s)!] = s
     const cols = { gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)` }
     return (
       <>
@@ -239,6 +240,26 @@ export function SkillTree({
     arr.push(s)
     byClass.set(s.classId, arr)
   }
+
+  // Ingame-Ansicht: Klassen-Raster zu 2 Töpfen zusammenfassen —
+  // A: Novice + First (bzw. Basis-Expanded), B: Second + Rebirth (bzw. fortgeschr. Expanded).
+  const bucketOf = (cid: string): 'A' | 'B' => {
+    const t = getClass(cid)?.tier
+    if (t === 'second' || t === 'transcendent') return 'B'
+    if (t === 'expanded') return cid === 'stargladiator' || cid === 'soullinker' ? 'B' : 'A'
+    return 'A'
+  }
+  const chainIds = classChain(classId).map((c) => c.id)
+  const gridBuckets = (['A', 'B'] as const)
+    .map((key) => {
+      const ids = chainIds.filter((id) => byClass.has(id) && bucketOf(id) === key)
+      return {
+        key,
+        header: ids.map((id) => getClass(id)?.name ?? id).join(' / '),
+        skills: ids.flatMap((id) => byClass.get(id)!),
+      }
+    })
+    .filter((b) => b.skills.length > 0)
 
   // Nur Töpfe zeigen, für die die Klasse tatsächlich punktekostende Skills hat
   // (Platin-Skills verbrauchen keine Punkte und zählen nicht für die Topf-Anzeige).
@@ -293,12 +314,17 @@ export function SkillTree({
         </div>
       </div>
 
-      {[...byClass.entries()].map(([cid, skills]) => (
-        <div key={cid} className="skill-group">
-          <h5>{getClass(cid)?.name ?? cid}</h5>
-          {view === 'grid'
-            ? gridFor(skills)
-            : view === 'list'
+      {view === 'grid'
+        ? gridBuckets.map((b) => (
+            <div key={b.key} className="skill-group">
+              <h5>{b.header}</h5>
+              {gridForSkills(b.skills)}
+            </div>
+          ))
+        : [...byClass.entries()].map(([cid, skills]) => (
+          <div key={cid} className="skill-group">
+            <h5>{getClass(cid)?.name ?? cid}</h5>
+            {view === 'list'
             ? [...skills]
                 .sort(
                   (a, b) =>
