@@ -168,3 +168,22 @@ export function saveLastExport(signature: string): void {
     console.error('BuildPlaner: Export-Zeitpunkt speichern fehlgeschlagen.', err)
   }
 }
+
+// ---------- Bevorzugte Skill-Ansicht (Liste/Ingame) ----------
+
+const SKILL_VIEW_KEY = 'buildplaner:skillView'
+export type SkillView = 'list' | 'grid'
+
+export function loadSkillView(): SkillView {
+  if (typeof localStorage === 'undefined') return 'list'
+  return localStorage.getItem(SKILL_VIEW_KEY) === 'grid' ? 'grid' : 'list'
+}
+
+export function saveSkillView(view: SkillView): void {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.setItem(SKILL_VIEW_KEY, view)
+  } catch {
+    /* Speichern fehlgeschlagen – Präferenz ist unkritisch */
+  }
+}

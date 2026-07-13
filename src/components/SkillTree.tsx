@@ -30,6 +30,7 @@ import {
 } from '../ro/skills'
 import { SKILL_GRID, GRID_COLS } from '../skillGrid'
 import { RO_ID_TO_SKILL } from '../roSkillIds'
+import { loadSkillView, saveSkillView, type SkillView } from '../storage'
 
 // Skill-Icons liegen lokal unter public/skill-icons/<ID>.png (offline-tauglich):
 //  - Standard-Skills: gespiegelt von db.irowiki.org (IDs mit RO-Nummer).
@@ -68,7 +69,12 @@ export function SkillTree({
   earlyJobChangeLevel,
   onChange,
 }: Props) {
-  const [view, setView] = useState<'list' | 'grid'>('list')
+  const [view, setView] = useState<SkillView>(() => loadSkillView())
+  // Umschalten + Präferenz in localStorage merken.
+  const changeView = (v: SkillView) => {
+    setView(v)
+    saveSkillView(v)
+  }
   const available = useMemo(() => skillsForClass(classId), [classId])
   const points = skillPoints(classId, levels, earlyJobChangeLevel)
 
@@ -288,14 +294,14 @@ export function SkillTree({
           <button
             type="button"
             className={view === 'list' ? 'active' : ''}
-            onClick={() => setView('list')}
+            onClick={() => changeView('list')}
           >
             Liste
           </button>
           <button
             type="button"
             className={view === 'grid' ? 'active' : ''}
-            onClick={() => setView('grid')}
+            onClick={() => changeView('grid')}
             title="Wie im Spiel: Icon-Raster (Positionen aus dem RO-Client)"
           >
             Ingame
