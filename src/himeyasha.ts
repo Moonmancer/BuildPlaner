@@ -27,8 +27,10 @@ function decodeCode(code: string): number[] {
   return tdata
 }
 
+// Dateiname als Slug – deckt beide Hosts ab: irowiki.org/~himeyasha/skill7/<slug>.html
+// und oldskillsim.irowiki.org/<slug>.html. Der Slug muss in HIME_JOB_CODES existieren.
 const slugFrom = (i: string) =>
-  (i.match(/skill7\/([a-z0-9_]+)\.html/i)?.[1] ?? '').toLowerCase() || null
+  (i.match(/(?:^|\/)([a-z0-9_]+)\.html/i)?.[1] ?? '').toLowerCase() || null
 const codeFrom = (i: string) => i.match(/\?([0-9A-Za-z]+)/)?.[1] ?? null
 
 /** Baut aus einem himeyasha-Link einen (Inhalts-)Build (nur Skills). Null wenn ungültig. */

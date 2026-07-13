@@ -10,7 +10,9 @@ import { decodeHimeyashaToBuild } from './himeyasha'
 export function decodeCalcUrl(input: string): Build | null {
   const s = input.trim()
   if (!s) return null
-  if (/~himeyasha|skill7\//.test(s)) {
+  // himeyasha-Sim (gleicher Codec) unter zwei Hosts: irowiki.org/~himeyasha/skill7
+  // und oldskillsim.irowiki.org. Beide als <slug>.html?<code>.
+  if (/~himeyasha|skill7\/|oldskillsim/.test(s)) {
     const b = decodeHimeyashaToBuild(s)
     if (b) return b
   }
