@@ -17,9 +17,11 @@ const ALIAS: Record<string, string> = {
   swordman: 'swordsman',
   magician: 'mage',
   taekwon: 'taekwon',
-  minstrel: 'clown',
-  scholar: 'professor',
-  biochemist: 'creator',
+  minstrel: 'clown', // iRO-Name für Clown
+  wanderer: 'gypsy', // iRO-Renewal-Name für Gypsy
+  scholar: 'professor', // iRO-Name für Professor
+  biochemist: 'creator', // iRO-Name für Creator
+  mastersmith: 'whitesmith', // iRO-Name für Whitesmith
 }
 
 function jobNameToClassId(name: string | null): string | null {
