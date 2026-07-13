@@ -351,7 +351,7 @@ button.btn-danger {
   width: 100%;
   /* seitliche Reserve, damit das Quest-Badge (oben rechts) den Namen nicht überlappt */
   padding: 0 9px;
-  font-size: 8px;
+  font-size: 10px;
   line-height: 1.15;
   text-align: center;
   white-space: nowrap;
