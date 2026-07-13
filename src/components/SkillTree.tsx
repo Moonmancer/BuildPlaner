@@ -179,6 +179,7 @@ export function SkillTree({
           if (canDec) lower(skill, e.ctrlKey || e.metaKey ? minAllowed : level - 1)
         }}
       >
+        <span className="cell-name">{skill.name}</span>
         {url ? (
           <img src={url} alt="" loading="lazy" />
         ) : (

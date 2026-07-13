@@ -320,12 +320,15 @@ button.btn-danger {
 }
 .skill-cell {
   position: relative;
-  aspect-ratio: 1;
+  min-height: 54px;
   border: 0.5px solid var(--border);
   border-radius: 6px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  gap: 2px;
+  padding: 3px 2px 4px;
   background: var(--bg);
   cursor: pointer;
   overflow: hidden;
@@ -344,9 +347,20 @@ button.btn-danger {
   filter: grayscale(0.6);
   opacity: 0.85;
 }
+.skill-cell .cell-name {
+  width: 100%;
+  font-size: 8px;
+  line-height: 1.15;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
 .skill-cell img {
-  width: 70%;
-  height: 70%;
+  width: 66%;
+  aspect-ratio: 1;
+  height: auto;
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -372,7 +386,7 @@ button.btn-danger {
 }
 .skill-cell .cell-q {
   position: absolute;
-  top: 1px;
+  bottom: 0;
   left: 2px;
   font-size: 8px;
   font-weight: 600;
