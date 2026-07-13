@@ -4,7 +4,6 @@ import { ConfirmProvider } from './components/ConfirmDialog'
 import { BuildList } from './components/BuildList'
 import { BuildDetail } from './components/BuildDetail'
 import { ShareImport } from './components/ShareImport'
-import { BackupBar } from './components/BackupBar'
 
 function App() {
   return (
@@ -17,8 +16,6 @@ function App() {
           <span className="badge">Pre-Renewal</span>
           <span className="tagline">Ragnarok Online · Stats &amp; Skills</span>
         </header>
-
-        <BackupBar />
 
         <div className="layout">
           <BuildList />
