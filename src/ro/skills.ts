@@ -833,3 +833,22 @@ export function skillPoints(
     second: { spent: secondSpent, cap: cap(secondBase) },
   }
 }
+
+/** Leitet das Job-Level aus den verteilten Skillpunkten der EIGENEN Klassen-Ebene ab
+ *  (1 Job-Level je Skillpunkt; Job-Level 1 = 0 Punkte). Auf maxJobLevel der Klasse geklammert. */
+export function jobLevelFromSkills(
+  classId: string | null | undefined,
+  levels: SkillLevels,
+  earlyJobChangeLevel: number,
+): number {
+  const cls = getClass(classId)
+  if (!cls) return 1
+  const pts = skillPoints(classId, levels, earlyJobChangeLevel)
+  const spent =
+    cls.tier === 'novice'
+      ? pts.novice.spent
+      : cls.tier === 'first'
+        ? pts.first.spent
+        : pts.second.spent
+  return Math.min(cls.maxJobLevel, Math.max(1, spent + 1))
+}

@@ -4,6 +4,7 @@ import { StatsEditor } from './StatsEditor'
 import { SkillTree } from './SkillTree'
 import { useConfirm } from './ConfirmDialog'
 import { encodeArcadia } from '../arcadia'
+import { jobLevelFromSkills } from '../ro/skills'
 
 interface Props {
   milestone: Milestone
@@ -36,11 +37,14 @@ export function MilestoneCard({
     updateMilestone(m.id, p)
   }
 
+  // Job-Level wird automatisch aus den verteilten Skillpunkten abgeleitet (1 Punkt = 1 Job-Level).
+  const derivedJobLevel = jobLevelFromSkills(classId, m.skills, earlyJobChangeLevel)
+
   // Arcadia-Link für diesen Snapshot (nur wenn die Klasse dort existiert).
   const arcadiaUrl = encodeArcadia(
     classId,
     m.baseLevel,
-    m.jobLevel,
+    derivedJobLevel,
     m.stats,
     m.skills,
   )
@@ -65,7 +69,7 @@ export function MilestoneCard({
         </span>
         <span className="ms-label">{m.label || 'Unbenannter Milestone'}</span>
         <span className="ms-levels">
-          Base {m.baseLevel} · Job {m.jobLevel}
+          Base {m.baseLevel} · Job {derivedJobLevel}
         </span>
       </summary>
 
@@ -101,17 +105,10 @@ export function MilestoneCard({
             <span>Job-Level (max {maxJobLevel})</span>
             <input
               type="number"
-              min={1}
-              max={maxJobLevel}
-              value={m.jobLevel}
-              onChange={(e) =>
-                patch({
-                  jobLevel: Math.min(
-                    maxJobLevel,
-                    Math.max(1, Math.round(e.target.valueAsNumber || 1)),
-                  ),
-                })
-              }
+              value={derivedJobLevel}
+              readOnly
+              tabIndex={-1}
+              title="Wird automatisch aus den verteilten Skillpunkten berechnet (1 Punkt = 1 Job-Level)."
             />
           </label>
         </div>
@@ -130,7 +127,7 @@ export function MilestoneCard({
               }}
               title="Diesen Milestone im Arcadia-Rechner öffnen (Klasse, Level, Stats, Kampf-Skills)"
             >
-              ⚔ In Arcadia öffnen ↗
+              ⚔ In Arcadia Calc öffnen ↗
             </a>
           )}
           <button
@@ -164,7 +161,12 @@ export function MilestoneCard({
           classId={classId}
           levels={m.skills}
           earlyJobChangeLevel={earlyJobChangeLevel}
-          onChange={(skills) => patch({ skills })}
+          onChange={(skills) =>
+            patch({
+              skills,
+              jobLevel: jobLevelFromSkills(classId, skills, earlyJobChangeLevel),
+            })
+          }
         />
       </div>
     </details>
