@@ -46,7 +46,7 @@ interface Props {
   onChange: (levels: SkillLevels) => void
 }
 
-/** Skill-Baum eines Builds: umschaltbar zwischen Listen- und Baum-Ansicht.
+/** Skill-Baum eines Builds: umschaltbar zwischen Listen- und Ingame-Ansicht.
  *  Beim Erhöhen werden benötigte Vor-Skills automatisch mitgelernt.
  *  Skillpunkt-Budget je Tier (Novice / First / Second), 1 Job-Level je Punkt. */
 export function SkillTree({
@@ -55,12 +55,8 @@ export function SkillTree({
   earlyJobChangeLevel,
   onChange,
 }: Props) {
-  const [view, setView] = useState<'list' | 'tree' | 'grid'>('list')
+  const [view, setView] = useState<'list' | 'grid'>('list')
   const available = useMemo(() => skillsForClass(classId), [classId])
-  const availById = useMemo(
-    () => new Map(available.map((s) => [s.id, s])),
-    [available],
-  )
   const points = skillPoints(classId, levels, earlyJobChangeLevel)
 
   if (!classId) {
@@ -73,21 +69,6 @@ export function SkillTree({
       </p>
     )
   }
-
-  // Tiefe eines Skills anhand seiner Voraussetzungen (für die Baum-Einrückung).
-  const depthOf = (() => {
-    const cache = new Map<string, number>()
-    function d(id: string): number {
-      if (cache.has(id)) return cache.get(id)!
-      cache.set(id, 0) // Zyklusschutz
-      const s = availById.get(id)
-      const req = s?.requires.filter((r) => availById.has(r.id)) ?? []
-      const val = req.length === 0 ? 0 : 1 + Math.max(...req.map((r) => d(r.id)))
-      cache.set(id, val)
-      return val
-    }
-    return d
-  })()
 
   function raise(skill: SkillDef, level: number) {
     // Auto-Lernen: benötigte Vor-Skills werden mit hochgezogen.
@@ -298,13 +279,6 @@ export function SkillTree({
           </button>
           <button
             type="button"
-            className={view === 'tree' ? 'active' : ''}
-            onClick={() => setView('tree')}
-          >
-            Baum
-          </button>
-          <button
-            type="button"
             className={view === 'grid' ? 'active' : ''}
             onClick={() => setView('grid')}
             title="Wie im Spiel: Icon-Raster (Positionen aus dem RO-Client)"
@@ -324,26 +298,13 @@ export function SkillTree({
         : [...byClass.entries()].map(([cid, skills]) => (
           <div key={cid} className="skill-group">
             <h5>{getClass(cid)?.name ?? cid}</h5>
-            {view === 'list'
-            ? [...skills]
-                .sort(
-                  (a, b) =>
-                    Number(!!a.platinum) - Number(!!b.platinum) ||
-                    a.name.localeCompare(b.name),
-                )
-                .map((s) => <SkillRow key={s.id} skill={s} />)
-            : [...skills]
-                .sort((a, b) => depthOf(a.id) - depthOf(b.id))
-                .map((s) => (
-                  <div
-                    key={s.id}
-                    className="tree-node"
-                    style={{ marginLeft: depthOf(s.id) * 18 }}
-                  >
-                    {depthOf(s.id) > 0 && <span className="tree-branch">└ </span>}
-                    <SkillRow skill={s} />
-                  </div>
-                ))}
+            {[...skills]
+              .sort(
+                (a, b) =>
+                  Number(!!a.platinum) - Number(!!b.platinum) ||
+                  a.name.localeCompare(b.name),
+              )
+              .map((s) => <SkillRow key={s.id} skill={s} />)}
         </div>
       ))}
     </div>

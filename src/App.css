@@ -345,8 +345,9 @@ button.btn-danger {
   opacity: 0.85;
 }
 .skill-cell img {
-  width: 24px;
-  height: 24px;
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
   image-rendering: pixelated;
 }
 .skill-cell .cell-noicon {
@@ -881,14 +882,6 @@ button:disabled {
   font-size: 0.72rem;
   color: #e5a23d;
   opacity: 0.9;
-}
-.tree-node {
-  display: flex;
-  align-items: center;
-}
-.tree-branch {
-  opacity: 0.4;
-  font-size: 0.8rem;
 }
 
 /* ---------- Form-Elemente ---------- */
