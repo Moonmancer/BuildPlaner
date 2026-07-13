@@ -116,23 +116,6 @@ export function MilestoneCard({
           </label>
         </div>
 
-        <h4>Stats</h4>
-        <StatsEditor
-          stats={m.stats}
-          baseLevel={m.baseLevel}
-          isRebirth={isRebirth}
-          onChange={(stats) => patch({ stats })}
-          onSetBaseLevel={(level) => patch({ baseLevel: level })}
-        />
-
-        <h4>Skills</h4>
-        <SkillTree
-          classId={classId}
-          levels={m.skills}
-          earlyJobChangeLevel={earlyJobChangeLevel}
-          onChange={(skills) => patch({ skills })}
-        />
-
         <div className="ms-actions">
           {arcadiaUrl && (
             <a
@@ -161,6 +144,23 @@ export function MilestoneCard({
             Milestone löschen
           </button>
         </div>
+
+        <h4>Stats</h4>
+        <StatsEditor
+          stats={m.stats}
+          baseLevel={m.baseLevel}
+          isRebirth={isRebirth}
+          onChange={(stats) => patch({ stats })}
+          onSetBaseLevel={(level) => patch({ baseLevel: level })}
+        />
+
+        <h4>Skills</h4>
+        <SkillTree
+          classId={classId}
+          levels={m.skills}
+          earlyJobChangeLevel={earlyJobChangeLevel}
+          onChange={(skills) => patch({ skills })}
+        />
       </div>
     </details>
   )

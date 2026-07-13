@@ -578,7 +578,10 @@ button:disabled {
   flex-wrap: wrap;
 }
 .ms-actions {
-  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 4px 0 8px;
 }
 
 /* ---------- Stats ---------- */
