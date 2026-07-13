@@ -349,6 +349,8 @@ button.btn-danger {
 }
 .skill-cell .cell-name {
   width: 100%;
+  /* seitliche Reserve, damit das Quest-Badge (oben rechts) den Namen nicht überlappt */
+  padding: 0 9px;
   font-size: 8px;
   line-height: 1.15;
   text-align: center;
@@ -386,8 +388,8 @@ button.btn-danger {
 }
 .skill-cell .cell-q {
   position: absolute;
-  bottom: 0;
-  left: 2px;
+  top: 1px;
+  right: 2px;
   font-size: 8px;
   font-weight: 600;
   color: var(--accent);

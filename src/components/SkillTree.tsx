@@ -31,12 +31,11 @@ import {
 import { SKILL_GRID, GRID_COLS } from '../skillGrid'
 import { RO_ID_TO_SKILL } from '../roSkillIds'
 
-// Unsere Skill-Konstante -> numerische RO-ID (für die Ingame-Icons von db.irowiki.org).
+// Skill-Icons liegen lokal unter public/skill-icons/<ID>.png (offline-tauglich):
+//  - Standard-Skills: gespiegelt von db.irowiki.org (IDs mit RO-Nummer).
+//  - Server-spezifische Platin-Skills (Arcadia): von wiki.arcadia-online.org.
 const SKILL_TO_RO_ID: Record<string, number> = {}
 for (const [num, id] of Object.entries(RO_ID_TO_SKILL)) SKILL_TO_RO_ID[id] = Number(num)
-
-// Server-spezifische Platin-Skills (Arcadia) ohne RO-ID: eigene, lokal abgelegte Icons
-// (public/skill-icons/<ID>.png, gezogen aus wiki.arcadia-online.org/Platinum_Skills).
 const CUSTOM_ICON_IDS = new Set([
   'GS_SIEGESTANCE',
   'GS_ENFEEBLEROUND',
@@ -48,14 +47,10 @@ const CUSTOM_ICON_IDS = new Set([
   'SL_WEAVESELF',
   'TK_VIRTUES',
 ])
-const iconUrl = (id: string) => {
-  if (CUSTOM_ICON_IDS.has(id)) {
-    return `${import.meta.env.BASE_URL}skill-icons/${id}.png`
-  }
-  return SKILL_TO_RO_ID[id]
-    ? `https://db.irowiki.org/image/skill/${SKILL_TO_RO_ID[id]}.png`
+const iconUrl = (id: string) =>
+  CUSTOM_ICON_IDS.has(id) || SKILL_TO_RO_ID[id]
+    ? `${import.meta.env.BASE_URL}skill-icons/${id}.png`
     : null
-}
 
 interface Props {
   classId: string | null
