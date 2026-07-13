@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { SkillLevels } from '../types'
 import { getClass } from '../ro/classes'
+import { HERC_NAMES } from '../hercNames'
 import {
   skillsForClass,
   dependentsBlocking,
@@ -90,7 +91,9 @@ export function SkillTree({
     return (
       <div className={`skill-row2${level > 0 ? ' active' : ''}`}>
         <span className="skill-nm">
-          {skill.name}
+          {HERC_NAMES[skill.id] && HERC_NAMES[skill.id] !== skill.name
+            ? `${skill.name} (Herc: ${HERC_NAMES[skill.id]})`
+            : skill.name}
           {skill.platinum && (
             <span className="skill-quest" title="Platin-/Quest-Skill – kostet keinen Skillpunkt">
               Quest
