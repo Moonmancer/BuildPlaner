@@ -28,6 +28,16 @@ import {
   type SkillDef,
   type PoolInfo,
 } from '../ro/skills'
+import { SKILL_GRID, GRID_COLS } from '../skillGrid'
+import { RO_ID_TO_SKILL } from '../roSkillIds'
+
+// Unsere Skill-Konstante -> numerische RO-ID (für die Ingame-Icons von db.irowiki.org).
+const SKILL_TO_RO_ID: Record<string, number> = {}
+for (const [num, id] of Object.entries(RO_ID_TO_SKILL)) SKILL_TO_RO_ID[id] = Number(num)
+const iconUrl = (id: string) =>
+  SKILL_TO_RO_ID[id]
+    ? `https://db.irowiki.org/image/skill/${SKILL_TO_RO_ID[id]}.png`
+    : null
 
 interface Props {
   classId: string | null
@@ -45,7 +55,7 @@ export function SkillTree({
   earlyJobChangeLevel,
   onChange,
 }: Props) {
-  const [view, setView] = useState<'list' | 'tree'>('list')
+  const [view, setView] = useState<'list' | 'tree' | 'grid'>('list')
   const available = useMemo(() => skillsForClass(classId), [classId])
   const availById = useMemo(
     () => new Map(available.map((s) => [s.id, s])),
@@ -145,6 +155,83 @@ export function SkillTree({
     )
   }
 
+  // Ingame-Ansicht: kompakte Icon-Zelle. Klick = +1 (Strg = Max), Rechtsklick = −1 (Strg = Min).
+  function SkillCell({ skill }: { skill: SkillDef }) {
+    const level = levels[skill.id] ?? 0
+    const canInc = level < skill.maxLevel
+    const minAllowed = available.reduce((m, s2) => {
+      if ((levels[s2.id] ?? 0) <= 0) return m
+      const req = s2.requires.find((r) => r.id === skill.id)
+      return req ? Math.max(m, req.level) : m
+    }, 0)
+    const canDec =
+      level > 0 &&
+      dependentsBlocking(skill, level - 1, levels, available).length === 0
+    const url = iconUrl(skill.id)
+    return (
+      <div
+        className={`skill-cell${level > 0 ? ' active' : ''}`}
+        title={`${displayName(skill.id, skill.name)} — ${level}/${skill.maxLevel}\nKlick: +  ·  Rechtsklick: −  ·  Strg: Max/Min`}
+        onClick={(e) =>
+          canInc && raise(skill, e.ctrlKey || e.metaKey ? skill.maxLevel : level + 1)
+        }
+        onContextMenu={(e) => {
+          e.preventDefault()
+          if (canDec) lower(skill, e.ctrlKey || e.metaKey ? minAllowed : level - 1)
+        }}
+      >
+        {url ? (
+          <img src={url} alt="" loading="lazy" />
+        ) : (
+          <span className="cell-noicon">{skill.name.slice(0, 3)}</span>
+        )}
+        <span className="cell-lvl">
+          {level}/{skill.maxLevel}
+        </span>
+        {skill.platinum && (
+          <span className="cell-q" title="Platin-/Quest-Skill">
+            Q
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  // Ingame-Raster einer Klassengruppe (7 Spalten, Positionen aus skilltreeview.lub).
+  function gridFor(skills: SkillDef[]) {
+    const gmap = SKILL_GRID[skills[0].classId] ?? {}
+    const placed = skills.filter((s) => s.id in gmap)
+    const extras = skills.filter((s) => !(s.id in gmap))
+    const maxIdx = placed.reduce((m, s) => Math.max(m, gmap[s.id]), -1)
+    const cells: (SkillDef | null)[] = Array(
+      maxIdx >= 0 ? (Math.floor(maxIdx / GRID_COLS) + 1) * GRID_COLS : 0,
+    ).fill(null)
+    for (const s of placed) cells[gmap[s.id]] = s
+    const cols = { gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)` }
+    return (
+      <>
+        {maxIdx >= 0 && (
+          <div className="skill-grid" style={cols}>
+            {cells.map((s, i) =>
+              s ? (
+                <SkillCell key={s.id} skill={s} />
+              ) : (
+                <div key={`e${i}`} className="skill-cell empty" />
+              ),
+            )}
+          </div>
+        )}
+        {extras.length > 0 && (
+          <div className="skill-grid" style={cols}>
+            {extras.map((s) => (
+              <SkillCell key={s.id} skill={s} />
+            ))}
+          </div>
+        )}
+      </>
+    )
+  }
+
   // Skills nach Klasse (Tier) gruppieren – Reihenfolge wie in der Vererbungskette.
   const byClass = new Map<string, SkillDef[]>()
   for (const s of available) {
@@ -195,13 +282,23 @@ export function SkillTree({
           >
             Baum
           </button>
+          <button
+            type="button"
+            className={view === 'grid' ? 'active' : ''}
+            onClick={() => setView('grid')}
+            title="Wie im Spiel: Icon-Raster (Positionen aus dem RO-Client)"
+          >
+            Ingame
+          </button>
         </div>
       </div>
 
       {[...byClass.entries()].map(([cid, skills]) => (
         <div key={cid} className="skill-group">
           <h5>{getClass(cid)?.name ?? cid}</h5>
-          {view === 'list'
+          {view === 'grid'
+            ? gridFor(skills)
+            : view === 'list'
             ? [...skills]
                 .sort(
                   (a, b) =>
