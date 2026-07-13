@@ -560,7 +560,7 @@ const TREES: Record<string, TreeEntry[]> = {
     { id: 'SL_SMA', name: 'Esma', maxLevel: 10, requires: [R('SL_STIN', 7), R('SL_STUN', 7)] },
     { id: 'SL_SKE', name: 'Eske', maxLevel: 3, requires: [R('SL_KNIGHT', 1)] },
     { id: 'SL_SKA', name: 'Eska', maxLevel: 3, requires: [R('SL_MONK', 1)] },
-    { id: 'SL_HIGH', name: 'Espa', maxLevel: 5, requires: [R('SL_SUPERNOVICE', 5)] },
+    { id: 'SL_HIGH', name: '1st Transcendent Spirit', maxLevel: 5, requires: [R('SL_SUPERNOVICE', 5)] },
     // Server-spezifische Platin-/Quest-Skills:
     { id: 'SL_KASHU', name: 'Kashu', maxLevel: 1, requires: [R('TK_VIRTUES', 1)], platinum: true },
     { id: 'SL_WEAVESELF', name: 'Weave Self', maxLevel: 1, platinum: true },

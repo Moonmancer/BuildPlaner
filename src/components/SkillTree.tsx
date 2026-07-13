@@ -185,7 +185,9 @@ export function SkillTree({
         <div key={cid} className="skill-group">
           <h5>{getClass(cid)?.name ?? cid}</h5>
           {view === 'list'
-            ? skills.map((s) => <SkillRow key={s.id} skill={s} />)
+            ? [...skills]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((s) => <SkillRow key={s.id} skill={s} />)
             : [...skills]
                 .sort((a, b) => depthOf(a.id) - depthOf(b.id))
                 .map((s) => (
