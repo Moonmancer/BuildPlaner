@@ -1,7 +1,12 @@
 // XML Im-/Export für Backup/Transfer ganzer Sammlungen (Builds + Gruppen).
 // Bewusst schema-einfach und tolerant; Normalisierung läuft über die storage-Helfer.
 
-import { migrateBuild, migrateGroups } from './storage'
+import {
+  migrateBuild,
+  migrateGroups,
+  saveLastExport,
+  computeSignature,
+} from './storage'
 import type { Build, BuildGroup } from './types'
 
 function esc(s: string): string {
@@ -124,6 +129,18 @@ export function parseXml(
   return {
     builds: buildsRaw.map(migrateBuild),
     groups: migrateGroups(groupsRaw),
+  }
+}
+
+/** Exportiert die ganze Sammlung als XML-Download und merkt sich Zeitpunkt + Inhalts-Signatur
+ *  (für die Backup-Erinnerung). Löst zudem ein `buildplaner:exported`-Event aus, damit das
+ *  Erinnerungs-Banner sofort reagieren kann. */
+export function exportCollectionXml(builds: Build[], groups: BuildGroup[]): void {
+  const xml = dataToXml(builds, groups)
+  downloadFile('buildplaner-export.xml', xml)
+  saveLastExport(computeSignature(xml))
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('buildplaner:exported'))
   }
 }
 

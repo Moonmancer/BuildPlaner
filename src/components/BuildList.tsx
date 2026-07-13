@@ -3,7 +3,7 @@ import { useStore } from '../store'
 import { getClass } from '../ro/classes'
 import { childrenOf } from '../groupTree'
 import { useConfirm, useConfirmChoice } from './ConfirmDialog'
-import { dataToXml, parseXml, downloadFile } from '../xml'
+import { parseXml, exportCollectionXml } from '../xml'
 import { decodeCalcUrl } from '../calcImport'
 import type { Build, BuildGroup } from '../types'
 
@@ -90,7 +90,7 @@ export function BuildList() {
   }
 
   function onExportAll() {
-    downloadFile('buildplaner-export.xml', dataToXml(builds, groups))
+    exportCollectionXml(builds, groups)
   }
 
   async function onImportFile(e: ChangeEvent<HTMLInputElement>) {

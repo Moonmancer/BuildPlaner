@@ -121,3 +121,50 @@ export function saveData(data: AppData): void {
     console.error('BuildPlaner: Speichern fehlgeschlagen.', err)
   }
 }
+
+// ---------- Letzter XML-Export (für die Backup-Erinnerung) ----------
+
+const EXPORT_KEY = 'buildplaner:lastExport'
+
+export interface LastExport {
+  /** Zeitpunkt des letzten XML-Exports (ISO). */
+  at: string
+  /** Signatur des damals exportierten Inhalts – für „seit dem geändert?". */
+  signature: string
+}
+
+/** Billiger, stabiler String-Hash (djb2) zur Änderungserkennung des Export-Inhalts. */
+export function computeSignature(content: string): string {
+  let h = 5381
+  for (let i = 0; i < content.length; i++) {
+    h = (h * 33) ^ content.charCodeAt(i)
+  }
+  return (h >>> 0).toString(36)
+}
+
+export function loadLastExport(): LastExport | null {
+  if (typeof localStorage === 'undefined') return null
+  const raw = localStorage.getItem(EXPORT_KEY)
+  if (!raw) return null
+  try {
+    const o = JSON.parse(raw) as Partial<LastExport>
+    if (typeof o?.at === 'string' && typeof o?.signature === 'string') {
+      return { at: o.at, signature: o.signature }
+    }
+  } catch {
+    /* unlesbar -> als „nie exportiert" behandeln */
+  }
+  return null
+}
+
+export function saveLastExport(signature: string): void {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.setItem(
+      EXPORT_KEY,
+      JSON.stringify({ at: new Date().toISOString(), signature }),
+    )
+  } catch (err) {
+    console.error('BuildPlaner: Export-Zeitpunkt speichern fehlgeschlagen.', err)
+  }
+}

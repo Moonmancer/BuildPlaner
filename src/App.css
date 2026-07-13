@@ -34,6 +34,29 @@
   opacity: 0.6;
 }
 
+/* ---------- Backup-Erinnerung (XML-Export) ---------- */
+.export-reminder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: -8px 0 24px;
+  padding: 10px 14px;
+  border: 1px solid #d0a53c;
+  border-radius: 8px;
+  background: color-mix(in srgb, #e5a23d 14%, transparent);
+  font-size: 0.85rem;
+}
+.export-reminder .reminder-text {
+  color: var(--text-h);
+}
+.export-reminder .reminder-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 /* ---------- Layout ---------- */
 .layout {
   display: grid;
