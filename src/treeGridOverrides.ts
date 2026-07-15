@@ -17,4 +17,9 @@ export const TREE_GRID_OVERRIDES: Record<string, Record<string, [number, number]
     TK_HPTIME: [3, 3],
     TK_SEVENWIND: [3, 2],
   },
+  stargladiator: {
+    // Peaceful Break und Mild Wind getauscht (wie Taekwon/Soul Linker).
+    TK_HPTIME: [3, 3],
+    TK_SEVENWIND: [3, 2],
+  },
 }

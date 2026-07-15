@@ -23,6 +23,8 @@ const DERIVE: Record<string, string> = {
   merchant: 'bsm',
   thief: 'ass',
   acolyte: 'pri',
+  // Star Gladiator teilt sich die Taekwon-Seite ('tae', enthält TK- + SG-Skills).
+  stargladiator: 'tae',
 }
 
 const slugToClass: Record<string, string> = { ...HIME_SLUG_TO_CLASS, ...EXTRA_SLUGS }
