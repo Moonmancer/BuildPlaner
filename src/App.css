@@ -566,16 +566,6 @@ button.btn-danger {
   stroke-width: 3px;
   fill: var(--text-h);
 }
-.tree-iso-label {
-  position: absolute;
-  left: 0;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted, #888);
-  border-top: 1px dashed var(--border, #444);
-  width: 100%;
-  padding-top: 4px;
-}
 
 .skill-cell {
   position: relative;

@@ -254,8 +254,7 @@ export function SkillTree({
     const isoSet = new Set(isolatedIds)
     const hasIsolated = isolatedIds.length > 0
     const isoCols = Math.max(1, Math.floor((mainWidth + CG) / (NW + CG)))
-    const isoLabelY = hasIsolated ? mainHeight + 28 : 0
-    const isoTop = isoLabelY + 22
+    const isoTop = mainHeight + RG // Abstand als Trenner zum Baum (ohne Beschriftung)
     isolatedIds.forEach((id, i) => {
       const c = i % isoCols
       const r = Math.floor(i / isoCols)
@@ -326,7 +325,9 @@ export function SkillTree({
       straight: boolean
     }
     const infos: EInfo[] = []
-    type YPort = { key: number; pin: number | null; kind: 'in' | 'out'; apply: (y: number) => void }
+    // key = y des schlüsselgebenden Endpunkts (Quelle bei Eintritt, Ziel bei Austritt), key2 = dessen
+    // x als Zweitschlüssel: bei gleichem y ordnet die weiter RECHTS liegende Karte nach oben.
+    type YPort = { key: number; key2: number; pin: number | null; kind: 'in' | 'out'; apply: (y: number) => void }
     type XPort = { key: number; apply: (x: number) => void }
     const yBus = new Map<string, YPort[]>() // key `${id}:L|R` (eine Bahn je physischer Kartenkante)
     const xBus = new Map<string, XPort[]>() // key `${id}:T|B`
@@ -409,22 +410,22 @@ export function SkillTree({
         infos.push(info)
         if (fam === 'fwd') {
           // Entry an der LINKEN Kante des Ziels (Exit folgt, wenn straight bekannt ist).
-          pushY(`${s.id}:L`, { key: from.y, pin: null, kind: 'in', apply: (y) => (info.entryY = y) })
+          pushY(`${s.id}:L`, { key: from.y, key2: from.x, pin: null, kind: 'in', apply: (y) => (info.entryY = y) })
         } else if (fam === 'vent') {
           // Entry oben/unten am Ziel (x-Bahn), Exit an der rechten Kante der Quelle (y-Bahn).
           pushX(`${s.id}:${srcBelow ? 'B' : 'T'}`, { key: from.x, apply: (x) => (info.entryX = x) })
-          pushY(`${r.id}:R`, { key: to.y, pin: null, kind: 'out', apply: (y) => (info.exitY = y) })
+          pushY(`${r.id}:R`, { key: to.y, key2: to.x, pin: null, kind: 'out', apply: (y) => (info.exitY = y) })
         } else if (fam === 'samecol') {
           // Ein gemeinsamer vertikaler x-Wert (Exit Quelle == Entry Ziel) an der oberen/unteren Kante.
           const below = to.y > from.y
           pushX(`${s.id}:${below ? 'T' : 'B'}`, { key: from.x, apply: (x) => (info.entryX = x) })
         } else if (fam === 'gutter') {
-          pushY(`${s.id}:R`, { key: from.y, pin: null, kind: 'in', apply: (y) => (info.entryY = y) })
-          pushY(`${r.id}:R`, { key: to.y, pin: null, kind: 'out', apply: (y) => (info.exitY = y) })
+          pushY(`${s.id}:R`, { key: from.y, key2: from.x, pin: null, kind: 'in', apply: (y) => (info.entryY = y) })
+          pushY(`${r.id}:R`, { key: to.y, key2: to.x, pin: null, kind: 'out', apply: (y) => (info.exitY = y) })
         } else {
-          // back: Entry an der rechten Kante des Ziels, Exit an der linken Kante der Quelle.
-          pushY(`${s.id}:R`, { key: from.y, pin: null, kind: 'in', apply: (y) => (info.entryY = y) })
-          pushY(`${r.id}:L`, { key: to.y, pin: null, kind: 'out', apply: (y) => (info.exitY = y) })
+          // back: Exit an der linken Kante der Quelle (maßgeblich). Der Ziel-Eintritt an der rechten
+          // Kante folgt in Phase 3 – gepinnt, falls die Kante gerade sein kann.
+          pushY(`${r.id}:L`, { key: to.y, key2: to.x, pin: null, kind: 'out', apply: (y) => (info.exitY = y) })
         }
       }
     }
@@ -439,21 +440,24 @@ export function SkillTree({
       const cy = pos.get(busKey.split(':')[0])!.y
       const lo = cy + 8
       const hi = cy + NH - 8
-      const ents: { key: number; pin: number | null; ports: YPort[] }[] = []
-      for (const p of ports) if (p.kind === 'in' || p.pin !== null) ents.push({ key: p.key, pin: p.pin, ports: [p] })
+      const ents: { key: number; key2: number; pin: number | null; ports: YPort[] }[] = []
+      for (const p of ports)
+        if (p.kind === 'in' || p.pin !== null) ents.push({ key: p.key, key2: p.key2, pin: p.pin, ports: [p] })
       const free = ports.filter((p) => p.kind === 'out' && p.pin === null)
       if (free.length) {
         const avg = free.reduce((a, p) => a + p.key, 0) / free.length
+        const avg2 = free.reduce((a, p) => a + p.key2, 0) / free.length
         const pinnedOut = ents.filter((e) => e.pin !== null)
         if (pinnedOut.length) {
           let best = pinnedOut[0]
           for (const e of pinnedOut) if (Math.abs(e.key - avg) < Math.abs(best.key - avg)) best = e
           best.ports.push(...free)
         } else {
-          ents.push({ key: avg, pin: null, ports: free })
+          ents.push({ key: avg, key2: avg2, pin: null, ports: free })
         }
       }
-      ents.sort((a, b) => a.key - b.key)
+      // y aufsteigend (oben zuerst); bei Gleichstand x absteigend -> weiter rechts liegende Karte oben.
+      ents.sort((a, b) => a.key - b.key || b.key2 - a.key2)
       const n = ents.length
       ents.forEach((e, i) => {
         const slot = lo + ((hi - lo) * (i + 1)) / (n + 1)
@@ -471,20 +475,37 @@ export function SkillTree({
     //    und Rückwärts-Austritte (beide ohne Pin) -> Eintrittshöhen stehen danach fest.
     for (const [key, ports] of xBus) resolveX(key, ports)
     for (const [key, ports] of yBus) if (key.endsWith(':L')) resolveY(key, ports)
-    // 3. Straight bestimmen (Ziel-Eintrittshöhe liegt im Band der Quelle & Pfad frei) + Exit-Port der
-    //    fwd-Kanten an der rechten Kante der Quelle anlegen: gerade -> gepinnt, sonst gebündelt.
+    // 3. Straight bestimmen + den jeweils zweiten Port an der rechten Kante anlegen:
+    //    - fwd: Ziel-Eintritt maßgeblich (linke Kante); gerade, wenn er im Quell-Band liegt & Pfad
+    //      frei -> Quell-Austritt (rechte Kante) auf die Eintrittshöhe gepinnt, sonst gebündelt.
+    //    - back: Quell-Austritt maßgeblich (linke Kante); gerade, wenn er im ZIEL-Band liegt & Pfad
+    //      frei -> Ziel-Eintritt (rechte Kante) auf die Austrittshöhe gepinnt.
     for (const info of infos) {
-      if (info.fam !== 'fwd') continue
-      info.straight =
-        info.entryY >= info.fy + 8 &&
-        info.entryY <= info.fy + NH - 8 &&
-        !colBlockedAtY(info.cf, info.ct, info.entryY, info.r, info.s)
-      pushY(`${info.r}:R`, {
-        key: info.ty,
-        pin: info.straight ? info.entryY : null,
-        kind: 'out',
-        apply: (y) => (info.exitY = y),
-      })
+      if (info.fam === 'fwd') {
+        info.straight =
+          info.entryY >= info.fy + 8 &&
+          info.entryY <= info.fy + NH - 8 &&
+          !colBlockedAtY(info.cf, info.ct, info.entryY, info.r, info.s)
+        pushY(`${info.r}:R`, {
+          key: info.ty,
+          key2: info.tx,
+          pin: info.straight ? info.entryY : null,
+          kind: 'out',
+          apply: (y) => (info.exitY = y),
+        })
+      } else if (info.fam === 'back') {
+        info.straight =
+          info.exitY >= info.ty + 8 &&
+          info.exitY <= info.ty + NH - 8 &&
+          !colBlockedAtY(info.ct, info.cf, info.exitY, info.r, info.s)
+        pushY(`${info.s}:R`, {
+          key: info.fy,
+          key2: info.fx,
+          pin: info.straight ? info.exitY : null,
+          kind: 'in',
+          apply: (y) => (info.entryY = y),
+        })
+      }
     }
     // 4. RECHTE Kanten (`:R`) auflösen: fwd/vent/gutter-Austritte + gutter/back-Eintritte gemeinsam,
     //    ein-/ausgehend getrennt, nicht-gerade Austritte gebündelt.
@@ -563,6 +584,21 @@ export function SkillTree({
           ],
           lx: entryX + 8,
           ly: below ? endY - 12 : endY + 12,
+          level,
+          from: r,
+          to: s,
+        })
+      } else if (fam === 'back' && info.straight) {
+        // Gerade Rückwärts-Linie: von der linken Kante der Quelle waagerecht in die rechte Kante des
+        // Ziels (Austritt == Eintritt == exitY).
+        const tip = tx + NW
+        directEdges.push({
+          points: [
+            [fx, exitY],
+            [tip, exitY],
+          ],
+          lx: tip + 16,
+          ly: exitY - 8,
           level,
           from: r,
           to: s,
@@ -735,7 +771,7 @@ export function SkillTree({
       }
     })
     const edges: Edge[] = [...rightEdges, ...directEdges]
-    return { pos, width, height, edges, isoLabelY, hasIsolated }
+    return { pos, width, height, edges }
   }, [available, availById, classId, reducedReqs])
 
   if (!classId) {
@@ -1109,11 +1145,6 @@ export function SkillTree({
                 />
               )
             })}
-            {treeLayout.hasIsolated && (
-              <div className="tree-iso-label" style={{ top: treeLayout.isoLabelY }}>
-                Ohne Abhängigkeiten
-              </div>
-            )}
           </div>
         </div>
       ) : view === 'grid' ? (
