@@ -693,13 +693,14 @@ export function skillsForClass(classId: string | null | undefined): SkillDef[] {
       if (c.id !== ownId && e.inheritable === false) continue
       seen.add(e.id)
       let requires = e.requires ?? []
-      // First-, Second- und Transcendent-Fähigkeiten setzen Basic Skill 9 voraus
-      // (Jobwechsel Novice -> First Class steckt in jeder Job-Historie). Wird per
-      // Auto-Lernen mitgezogen und bricht per Kaskade weg, wenn Basic Skill sinkt.
+      // First-, Second-, Transcendent- UND Expanded-Fähigkeiten setzen Basic Skill 9 voraus
+      // (Jobwechsel Novice -> Klasse steckt in jeder Job-Historie). Wird per Auto-Lernen
+      // mitgezogen und bricht per Kaskade weg, wenn Basic Skill sinkt.
       if (
         (c.tier === 'first' ||
           c.tier === 'second' ||
-          c.tier === 'transcendent') &&
+          c.tier === 'transcendent' ||
+          c.tier === 'expanded') &&
         !requires.some((r) => r.id === 'NV_BASIC')
       ) {
         requires = [...requires, R('NV_BASIC', 9)]
