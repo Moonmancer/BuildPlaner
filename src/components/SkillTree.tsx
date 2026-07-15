@@ -20,7 +20,7 @@ function displayName(id: string, name: string): string {
 }
 import {
   skillsForClass,
-  dependentsBlocking,
+  lowerSkill,
   skillPoints,
   skillPool,
   poolLabels,
@@ -95,25 +95,15 @@ export function SkillTree({
   }
 
   function lower(skill: SkillDef, level: number) {
-    const clamped = Math.max(0, level)
-    const next = { ...levels }
-    if (clamped <= 0) delete next[skill.id]
-    else next[skill.id] = clamped
-    onChange(next)
+    // Reduzieren erlaubt; Folge-Skills, deren Voraussetzung dadurch bricht, werden
+    // automatisch mit-verlernt (Kaskade).
+    onChange(lowerSkill(levels, skill.id, level, available))
   }
 
   function SkillRow({ skill }: { skill: SkillDef }) {
     const level = levels[skill.id] ?? 0
-    // Herunterstufen blockieren, wenn ein aktiver Folge-Skill dieses Level braucht.
-    const blockers = dependentsBlocking(skill, level - 1, levels, available)
     const canInc = level < skill.maxLevel
-    const canDec = level > 0 && blockers.length === 0
-    // Minimum, ohne aktive Folge-Skills zu brechen (für Strg+Klick auf „−").
-    const minAllowed = available.reduce((m, s2) => {
-      if ((levels[s2.id] ?? 0) <= 0) return m
-      const req = s2.requires.find((r) => r.id === skill.id)
-      return req ? Math.max(m, req.level) : m
-    }, 0)
+    const canDec = level > 0
     return (
       <div className={`skill-row2${level > 0 ? ' active' : ''}`}>
         <span className="skill-nm">
@@ -128,9 +118,9 @@ export function SkillTree({
           <button
             type="button"
             disabled={!canDec}
-            title="Strg+Klick: auf Minimum"
+            title="Strg+Klick: ganz verlernen (inkl. abhängiger Skills)"
             onClick={(e) =>
-              lower(skill, e.ctrlKey || e.metaKey ? minAllowed : level - 1)
+              lower(skill, e.ctrlKey || e.metaKey ? 0 : level - 1)
             }
             aria-label={`${skill.name} verringern`}
           >
@@ -159,25 +149,18 @@ export function SkillTree({
   function SkillCell({ skill }: { skill: SkillDef }) {
     const level = levels[skill.id] ?? 0
     const canInc = level < skill.maxLevel
-    const minAllowed = available.reduce((m, s2) => {
-      if ((levels[s2.id] ?? 0) <= 0) return m
-      const req = s2.requires.find((r) => r.id === skill.id)
-      return req ? Math.max(m, req.level) : m
-    }, 0)
-    const canDec =
-      level > 0 &&
-      dependentsBlocking(skill, level - 1, levels, available).length === 0
+    const canDec = level > 0
     const url = iconUrl(skill.id)
     return (
       <div
         className={`skill-cell${level > 0 ? ' active' : ''}`}
-        title={`${displayName(skill.id, skill.name)} — ${level}/${skill.maxLevel}\nKlick: +  ·  Rechtsklick: −  ·  Strg: Max/Min`}
+        title={`${displayName(skill.id, skill.name)} — ${level}/${skill.maxLevel}\nKlick: +  ·  Rechtsklick: −  ·  Strg: Max/Ganz verlernen`}
         onClick={(e) =>
           canInc && raise(skill, e.ctrlKey || e.metaKey ? skill.maxLevel : level + 1)
         }
         onContextMenu={(e) => {
           e.preventDefault()
-          if (canDec) lower(skill, e.ctrlKey || e.metaKey ? minAllowed : level - 1)
+          if (canDec) lower(skill, e.ctrlKey || e.metaKey ? 0 : level - 1)
         }}
       >
         <span className="cell-name">{skill.name}</span>

@@ -772,6 +772,36 @@ export function learnSkill(
   return next
 }
 
+/** Setzt `skillId` auf `newLevel` (0 = verlernen) und verlernt danach kaskadierend alle
+ *  Folge-Skills, deren Voraussetzungen dadurch nicht mehr erfüllt sind (Fixpunkt-Iteration). */
+export function lowerSkill(
+  levels: SkillLevels,
+  skillId: string,
+  newLevel: number,
+  available: SkillDef[],
+): SkillLevels {
+  const byId = new Map(available.map((s) => [s.id, s]))
+  const next: SkillLevels = { ...levels }
+  const clamped = Math.max(0, Math.floor(newLevel))
+  if (clamped <= 0) delete next[skillId]
+  else next[skillId] = clamped
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const s of available) {
+      if ((next[s.id] ?? 0) <= 0) continue
+      const met = s.requires.every(
+        (r) => !byId.has(r.id) || (next[r.id] ?? 0) >= r.level,
+      )
+      if (!met) {
+        delete next[s.id]
+        changed = true
+      }
+    }
+  }
+  return next
+}
+
 /** Skills, die `skill` als Voraussetzung haben und bei `targetLevel` brechen würden. */
 export function dependentsBlocking(
   skill: SkillDef,
