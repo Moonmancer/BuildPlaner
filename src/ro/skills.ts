@@ -713,11 +713,14 @@ export function skillsForClass(classId: string | null | undefined): SkillDef[] {
 
 export type SkillPool = 'novice' | 'first' | 'second'
 
-/** Skillpunkt-„Topf" eines Skills anhand der liefernden Klasse. Novice ist eigener Topf. */
-export function skillPool(skill: SkillDef): SkillPool {
+/** Skillpunkt-„Topf" eines Skills anhand der liefernden Klasse. Novice ist eigener Topf.
+ *  `classId` = Klasse des Builds: eine Expanded-VORGÄNGERklasse (z.B. Taekwon Kid unter Star
+ *  Gladiator/Soul Linker) bildet den First-Topf, die Zielklasse selbst den Second-Topf. */
+export function skillPool(skill: SkillDef, classId?: string | null): SkillPool {
   const tier = getClass(skill.classId)?.tier
   if (tier === 'novice') return 'novice'
   if (tier === 'first') return 'first'
+  if (tier === 'expanded' && classId != null && skill.classId !== classId) return 'first'
   return 'second'
 }
 
@@ -745,7 +748,9 @@ export function poolLabels(classId: string | null | undefined): PoolLabels {
   const chain = classChain(classId)
   const cls = chain[chain.length - 1]
   const rebirth = cls?.isRebirth ?? false
-  const firstCls = chain.find((c) => c.tier === 'first')
+  const firstCls = chain.find(
+    (c) => c.tier === 'first' || (c.tier === 'expanded' && c.id !== cls?.id),
+  )
   const novice = rebirth ? 'High Novice' : 'Novice'
   const first = rebirth
     ? firstCls
@@ -849,15 +854,22 @@ export function skillPoints(
   for (const s of available) {
     const lvl = levels[s.id] ?? 0
     if (lvl <= 0 || s.platinum) continue
-    const pool = skillPool(s)
+    const pool = skillPool(s, classId)
     if (pool === 'novice') noviceSpent += lvl
     else if (pool === 'first') firstSpent += lvl
     else secondSpent += lvl
   }
   // Skillpunkte je Ebene = Job-Level - 1 (Start bei Job-Level 1 = 0 Punkte).
   const noviceClass = chain.find((c) => c.tier === 'novice')
-  const firstAncestor = chain.find((c) => c.tier === 'first')
-  const isAdvanced = cls?.tier === 'second' || cls?.tier === 'transcendent'
+  // First-Topf = tier-first-Vorgänger ODER Expanded-Vorgängerklasse (Taekwon Kid unter
+  // Star Gladiator/Soul Linker).
+  const firstAncestor = chain.find(
+    (c) => c.tier === 'first' || (c.tier === 'expanded' && c.id !== cls?.id),
+  )
+  const isAdvanced =
+    cls?.tier === 'second' ||
+    cls?.tier === 'transcendent' ||
+    (cls?.tier === 'expanded' && !!firstAncestor)
   const firstBase = isAdvanced
     ? earlyJobChangeLevel
     : (firstAncestor?.maxJobLevel ?? 0)

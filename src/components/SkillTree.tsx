@@ -1061,7 +1061,7 @@ export function SkillTree({
   // Nur Töpfe zeigen, für die die Klasse tatsächlich punktekostende Skills hat
   // (Platin-Skills verbrauchen keine Punkte und zählen nicht für die Topf-Anzeige).
   const poolsPresent = new Set(
-    available.filter((s) => !s.platinum).map((s) => skillPool(s)),
+    available.filter((s) => !s.platinum).map((s) => skillPool(s, classId)),
   )
   const labels = poolLabels(classId)
   const pools: { key: string; label: string; info: PoolInfo }[] = [
