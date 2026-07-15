@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "gen:tree": "rolldown scripts/genTreeOrder.ts -o node_modules/.gen-treeorder.mjs -f esm -p node && node node_modules/.gen-treeorder.mjs",
+    "gen:treegrid": "rolldown scripts/genTreeGrid.ts -o node_modules/.gen-treegrid.mjs -f esm -p node && node node_modules/.gen-treegrid.mjs"
   },
   "dependencies": {
     "react": "^19.2.7",

@@ -172,11 +172,12 @@ export function saveLastExport(signature: string): void {
 // ---------- Bevorzugte Skill-Ansicht (Liste/Ingame) ----------
 
 const SKILL_VIEW_KEY = 'buildplaner:skillView'
-export type SkillView = 'list' | 'grid'
+export type SkillView = 'list' | 'grid' | 'tree'
 
 export function loadSkillView(): SkillView {
   if (typeof localStorage === 'undefined') return 'list'
-  return localStorage.getItem(SKILL_VIEW_KEY) === 'grid' ? 'grid' : 'list'
+  const v = localStorage.getItem(SKILL_VIEW_KEY)
+  return v === 'grid' || v === 'tree' ? v : 'list'
 }
 
 export function saveSkillView(view: SkillView): void {

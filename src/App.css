@@ -1,7 +1,7 @@
 .app {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 24px 20px 80px;
+  padding: 24px 24px 80px;
 }
 
 /* ---------- Header ---------- */
@@ -300,6 +300,7 @@ button.btn-danger {
 /* ---------- Im-/Export & Teilen ---------- */
 .list-tools {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin: -6px 0 16px;
 }
@@ -388,6 +389,194 @@ button.btn-danger {
 .skill-cell .rel-badge.rel-dep {
   background: #d97706;
 }
+
+/* ---------- Baum-Ansicht (Skilltree-Diagramm mit Verbindungslinien) ---------- */
+.skill-tree-scroll {
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.skill-tree-wrap {
+  position: relative;
+  width: max-content;
+  min-width: 100%;
+  --tree-col: 124px;
+}
+.skill-tree-canvas {
+  position: relative;
+}
+.tree-node2 {
+  box-sizing: border-box;
+  overflow: hidden;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 6px 5px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  cursor: pointer;
+  user-select: none;
+}
+.tree-node2.empty {
+  border: none;
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+.tree-node2.active {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.tree-node2:not(.empty):not(.active) {
+  filter: grayscale(0.5);
+}
+.tree-node2 .tn-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.tree-node2 .tn-head img {
+  width: 22px;
+  height: 22px;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+.tree-node2 .tn-head .cell-noicon {
+  width: 22px;
+  flex-shrink: 0;
+  font-size: 8px;
+  text-align: center;
+}
+.tree-node2 .tn-name {
+  font-size: 10px;
+  line-height: 1.15;
+  font-weight: 600;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tree-node2 .tn-q {
+  margin-left: auto;
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.tree-node2 .tn-foot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tree-node2 .tn-pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.tree-node2 .tn-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 32%, transparent);
+}
+.tree-node2 .tn-pip.on {
+  background: var(--accent);
+}
+.tree-node2 .tn-lvl {
+  font-size: 9px;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+.tree-node2.rel-req {
+  border-color: #38bdf8;
+  box-shadow: inset 0 0 0 1px #38bdf8;
+  filter: none;
+}
+.tree-node2.rel-dep {
+  border-color: #f59e0b;
+  box-shadow: inset 0 0 0 1px #f59e0b;
+  filter: none;
+}
+.tree-node2.rel-source {
+  border-color: var(--text-h);
+  box-shadow: inset 0 0 0 1px var(--text-h);
+  filter: none;
+}
+/* Indirekte (transitive) Beziehung: dezenter, gestrichelt statt kräftig umrandet. */
+.tree-node2.rel-indirect,
+.skill-cell.rel-indirect {
+  box-shadow: none;
+  border-style: dashed;
+}
+.tree-node2.rel-req.rel-indirect,
+.skill-cell.rel-req.rel-indirect {
+  border-color: color-mix(in srgb, #38bdf8 50%, transparent);
+}
+.tree-node2.rel-dep.rel-indirect,
+.skill-cell.rel-dep.rel-indirect {
+  border-color: color-mix(in srgb, #f59e0b 50%, transparent);
+}
+.tree-edges {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 0;
+}
+.tree-edges .tree-edge-casing {
+  fill: none;
+  stroke: var(--bg);
+  stroke-width: 10;
+  stroke-linejoin: round;
+}
+.tree-edges .tree-edge {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text) 55%, transparent);
+  stroke-width: 1.5;
+}
+/* Mit dem gehoverten Skill verbundene Kanten hervorheben (Linie + Pfeilspitze via context-stroke). */
+.tree-edges .tree-edge.hl {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+/* Indirekte Kette: gestrichelt & dezenter als die direkten Kanten. */
+.tree-edges .tree-edge.hl-indirect {
+  stroke: color-mix(in srgb, var(--accent) 55%, var(--text));
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+.tree-edges .te-ah {
+  fill: context-stroke;
+}
+.tree-edges .tree-edge-lvl.hl,
+.tree-edges .tree-edge-lvl.hl-indirect {
+  fill: var(--accent);
+}
+.tree-edges .tree-edge-lvl {
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 3px;
+  fill: var(--text-h);
+}
+.tree-iso-label {
+  position: absolute;
+  left: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted, #888);
+  border-top: 1px dashed var(--border, #444);
+  width: 100%;
+  padding-top: 4px;
+}
+
 .skill-cell {
   position: relative;
   min-height: 54px;
