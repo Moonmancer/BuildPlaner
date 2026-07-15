@@ -1089,7 +1089,7 @@ export function SkillTree({
                 <span key={p.key} className={over ? 'over-text' : ''}>
                   {p.label}: {p.info.spent}/{p.info.cap}
                   {p.key === 'first' && spill.firstBorrow > 0 && (
-                    <span className="ms-borrow"> (+{spill.firstBorrow} aus {labels.second})</span>
+                    <span className="ms-borrow"> (+{spill.firstBorrow})</span>
                   )}
                 </span>
               )
