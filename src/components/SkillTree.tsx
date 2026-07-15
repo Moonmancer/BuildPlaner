@@ -286,7 +286,10 @@ export function SkillTree({
     const directEdges: Edge[] = []
     // Vertikale Segmente der Sonderfälle (rückwärts/Gutter), die durch einen Spalten-Zwischenraum
     // laufen: werden in (C) mit denselben Trunk-Lanes gleichmäßig verteilt statt fest versetzt.
-    type VSeg = { gapCol: number; lo: number; hi: number; from: string; set: (x: number) => void }
+    // dir: +1 = liefert nach RECHTS (Vorwärts-Kante -> Ziel rechts), -1 = liefert nach LINKS
+    // (Rückwärts/Gutter -> Ziel links). Rechts-liefernde Verticals belegen die rechten Lanes, links-
+    // liefernde die linken; so teilen sich ein- und ausgehende Pfeile nie eine Lane / kreuzen nicht.
+    type VSeg = { gapCol: number; lo: number; hi: number; from: string; dir: 1 | -1; set: (x: number) => void }
     const directVsegs: VSeg[] = []
     const gapColOf = (x: number) => Math.round(x / (NW + CG))
     // Skills je Spalte (für die Prüfung, ob eine gerade vertikale Verbindung eine Karte kreuzt).
@@ -624,6 +627,7 @@ export function SkillTree({
           lo: Math.min(exitY, entryY),
           hi: Math.max(exitY, entryY),
           from: r,
+          dir: -1, // rückwärts/gutter -> liefert nach links
           set: (x) => {
             p1[0] = x
             p2[0] = x
@@ -664,6 +668,7 @@ export function SkillTree({
           lo: Math.min(e.y1, e.entryY),
           hi: Math.max(e.y1, e.entryY),
           from: e.from,
+          dir: 1,
           set: (x) => (e.turnX = x),
         })
       } else if (e.banded) {
@@ -673,6 +678,7 @@ export function SkillTree({
           lo: Math.min(e.laneY, e.entryY),
           hi: Math.max(e.laneY, e.entryY),
           from: e.from,
+          dir: 1,
           set: (x) => (e.xTrunk = x),
         })
         vsegs.push({
@@ -680,6 +686,7 @@ export function SkillTree({
           lo: Math.min(e.y1, e.laneY),
           hi: Math.max(e.y1, e.laneY),
           from: e.from,
+          dir: 1,
           set: (x) => (e.turnX = x),
         })
       } else {
@@ -689,6 +696,7 @@ export function SkillTree({
           lo: Math.min(e.y1, e.entryY),
           hi: Math.max(e.y1, e.entryY),
           from: e.from,
+          dir: 1,
           set: (x) => (e.xTrunk = x),
         })
       }
@@ -702,37 +710,48 @@ export function SkillTree({
     for (const [gapCol, group] of byGap) {
       // Verticals gleicher QUELLE bündeln (teilen sich eine Bahn); verschiedene Quellen per
       // Intervallfärbung nach vertikaler Ausdehnung trennen.
+      // Nach (Richtung, QUELLE) bündeln: gleiche Quelle+Richtung teilt sich eine Bahn.
       const bySrc = new Map<string, VSeg[]>()
       for (const v of group) {
-        const arr = bySrc.get(v.from) ?? []
+        const key = `${v.dir}:${v.from}`
+        const arr = bySrc.get(key) ?? []
         arr.push(v)
-        bySrc.set(v.from, arr)
+        bySrc.set(key, arr)
       }
-      const srcGroups = [...bySrc.values()]
-        .map((vs) => {
-          let lo = Infinity
-          let hi = -Infinity
-          for (const v of vs) {
-            lo = Math.min(lo, v.lo)
-            hi = Math.max(hi, v.hi)
-          }
-          return { vs, lo, hi, idx: 0 }
-        })
-        .sort((a, b) => a.lo - b.lo)
-      const laneEnds: number[] = []
-      for (const g of srcGroups) {
-        let idx = laneEnds.findIndex((end) => end <= g.lo - 4)
-        if (idx === -1) {
-          idx = laneEnds.length
-          laneEnds.push(g.hi)
-        } else {
-          laneEnds[idx] = g.hi
+      const srcGroups = [...bySrc.values()].map((vs) => {
+        let lo = Infinity
+        let hi = -Infinity
+        for (const v of vs) {
+          lo = Math.min(lo, v.lo)
+          hi = Math.max(hi, v.hi)
         }
-        g.idx = idx
+        return { vs, lo, hi, dir: vs[0].dir, idx: 0 }
+      })
+      // Intervallfärbung getrennt je Richtung; rechts-liefernde (dir +1) belegen die rechten Lanes
+      // (kleine idx), links-liefernde (dir -1) die linken (idx danach). So kreuzen sich Ein-/Ausgang
+      // an einem Knoten nicht mehr.
+      const color = (gs: typeof srcGroups, start: number) => {
+        const ends: number[] = []
+        for (const g of gs.sort((a, b) => a.lo - b.lo)) {
+          let i = ends.findIndex((end) => end <= g.lo - 4)
+          if (i === -1) {
+            i = ends.length
+            ends.push(g.hi)
+          } else {
+            ends[i] = g.hi
+          }
+          g.idx = start + i
+        }
+        return ends.length
       }
-      // Lanes gleichmäßig über die Spalten-Lücke verteilen: bei 1 Lane exakt mittig, bei n Lanes
-      // so, dass die Abstände zwischen den Lanes und zu den Skills links/rechts etwa gleich sind.
-      const nLanes = laneEnds.length
+      const kR = color(
+        srcGroups.filter((g) => g.dir === 1),
+        0,
+      )
+      const nLanes = kR + color(
+        srcGroups.filter((g) => g.dir === -1),
+        kR,
+      )
       const laneStep = CG / (nLanes + 1)
       const gapX = gapCol * (NW + CG)
       for (const g of srcGroups) for (const v of g.vs) v.set(gapX - laneStep * (g.idx + 1))
