@@ -838,6 +838,21 @@ export interface SkillPoints {
   second: PoolInfo
 }
 
+/** Abwärts-Überlauf: 2nd-Job-Punkte dürfen zusätzliche 1st-Class-Skills bezahlen (nicht umgekehrt).
+ *  firstBorrow = aus dem Second-Topf geliehene Punkte; gültig, solange sie den Second-Rest nicht
+ *  übersteigen. Novice bleibt strikt separat. */
+export function poolSpill(pts: SkillPoints) {
+  const firstBorrow = Math.max(0, pts.first.spent - pts.first.cap)
+  const secondSurplus = Math.max(0, pts.second.cap - pts.second.spent)
+  return {
+    firstBorrow,
+    secondSurplus,
+    firstOver: firstBorrow > secondSurplus,
+    secondOver: pts.second.spent > pts.second.cap,
+    noviceOver: pts.novice.spent > pts.novice.cap,
+  }
+}
+
 /** Verteilte Skillpunkte je Tier + Kapazität (1 Job-Level je Skillpunkt).
  *  Platin-/Quest-Skills zählen nicht. Novice = eigener Topf. */
 export function skillPoints(
@@ -898,6 +913,7 @@ export function jobLevelFromSkills(
       ? pts.novice.spent
       : cls.tier === 'first'
         ? pts.first.spent
-        : pts.second.spent
+        : // abwärts in den First-Topf geliehene Punkte zählen als verbrauchte Ziel-Job-Punkte mit
+          pts.second.spent + poolSpill(pts).firstBorrow
   return Math.min(cls.maxJobLevel, Math.max(1, spent + 1))
 }

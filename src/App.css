@@ -944,6 +944,12 @@ button:disabled {
   color: #e5484d;
   font-weight: 600;
 }
+/* Leih-Hinweis am First-Topf (2nd-Job-Punkte für 1st-Class-Skills). Erbt Rot, wenn der
+   Eltern-Span .over-text trägt (kein Rest zum Leihen). */
+.skill-budgets .ms-borrow {
+  font-size: 0.82em;
+  opacity: 0.7;
+}
 .tag-rebirth {
   color: var(--accent);
   font-weight: 600;

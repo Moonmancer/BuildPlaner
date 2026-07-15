@@ -22,6 +22,7 @@ import {
   skillsForClass,
   lowerSkill,
   skillPoints,
+  poolSpill,
   skillPool,
   poolLabels,
   learnSkill,
@@ -1064,6 +1065,7 @@ export function SkillTree({
     available.filter((s) => !s.platinum).map((s) => skillPool(s, classId)),
   )
   const labels = poolLabels(classId)
+  const spill = poolSpill(points)
   const pools: { key: string; label: string; info: PoolInfo }[] = [
     { key: 'novice', label: labels.novice, info: points.novice },
     { key: 'first', label: labels.first, info: points.first },
@@ -1076,14 +1078,22 @@ export function SkillTree({
         <div className="skill-budgets">
           {pools
             .filter((p) => poolsPresent.has(p.key as 'novice' | 'first' | 'second'))
-            .map((p) => (
-              <span
-                key={p.key}
-                className={p.info.spent > p.info.cap ? 'over-text' : ''}
-              >
-                {p.label}: {p.info.spent}/{p.info.cap}
-              </span>
-            ))}
+            .map((p) => {
+              const over =
+                p.key === 'novice'
+                  ? spill.noviceOver
+                  : p.key === 'second'
+                    ? spill.secondOver
+                    : spill.firstOver
+              return (
+                <span key={p.key} className={over ? 'over-text' : ''}>
+                  {p.label}: {p.info.spent}/{p.info.cap}
+                  {p.key === 'first' && spill.firstBorrow > 0 && (
+                    <span className="ms-borrow"> (+{spill.firstBorrow} aus {labels.second})</span>
+                  )}
+                </span>
+              )
+            })}
         </div>
         <div className="view-toggle">
           <button
