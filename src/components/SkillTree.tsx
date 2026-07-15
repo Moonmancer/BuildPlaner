@@ -462,9 +462,19 @@ export function SkillTree({
       // y aufsteigend (oben zuerst); bei Gleichstand x absteigend -> weiter rechts liegende Karte oben.
       ents.sort((a, b) => a.key - b.key || b.key2 - a.key2)
       const n = ents.length
+      const gap = (hi - lo) / (n + 1)
+      // Startpositionen: gepinnte (gerade Linien) auf ihren Pin, übrige auf gleichmäßige Slots.
+      const ys = ents.map((e, i) => (e.pin !== null ? Math.max(lo, Math.min(hi, e.pin)) : lo + gap * (i + 1)))
+      // Reihenfolge (nach key) beibehalten und Mindestabstand erzwingen. Gepinnte bleiben fix; die
+      // übrigen weichen ihnen aus -> ein eingehender Pfeil landet nie auf der Höhe einer geraden Linie.
+      for (let i = 1; i < n; i++) {
+        if (ys[i] < ys[i - 1] + gap) {
+          if (ents[i].pin === null) ys[i] = ys[i - 1] + gap
+          else for (let j = i - 1; j >= 0 && ys[j] > ys[j + 1] - gap; j--) if (ents[j].pin === null) ys[j] = ys[j + 1] - gap
+        }
+      }
       ents.forEach((e, i) => {
-        const slot = lo + ((hi - lo) * (i + 1)) / (n + 1)
-        const y = e.pin !== null ? Math.max(lo, Math.min(hi, e.pin)) : slot
+        const y = Math.max(lo, Math.min(hi, ys[i]))
         for (const p of e.ports) p.apply(y)
       })
     }
