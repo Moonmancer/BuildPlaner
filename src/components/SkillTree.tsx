@@ -557,6 +557,21 @@ export function SkillTree({
               c < ct &&
               ms.some((m) => m.id !== r && m.id !== s && m.y <= entryY && entryY <= m.y + NH),
           )
+        // Ausweich-Seite (Band ober-/unterhalb der Zielzeile). Bei gleicher Quell-/Zielzeile (Zeile
+        // durch Karte blockiert) die Seite wählen, die den ANDEREN eingehenden Kanten des Ziels
+        // ausweicht (kommen sie v.a. von unten -> Band nach oben, und umgekehrt); sonst wie bisher.
+        let bandTop = entryY >= y1 ? ty - RG : ty + NH
+        if (fy === ty) {
+          let above = 0
+          let below = 0
+          for (const rr of reducedReqs.get(s) ?? []) {
+            const pp = rr.id !== r && pos.get(rr.id)
+            if (!pp) continue
+            if (pp.y < ty) above++
+            else if (pp.y > ty) below++
+          }
+          if (below !== above) bandTop = below > above ? ty - RG : ty + NH
+        }
         segs.push({
           from: r,
           to: s,
@@ -568,7 +583,7 @@ export function SkillTree({
           banded,
           simpleTurn,
           turnX: banded ? blockCol * (NW + CG) - 24 : 0,
-          bandTop: entryY >= y1 ? ty - RG : ty + NH,
+          bandTop,
           laneY: y1,
           xTrunk: tx - 24,
         })
