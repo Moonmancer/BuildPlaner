@@ -7,4 +7,9 @@ export const TREE_GRID_OVERRIDES: Record<string, Record<string, [number, number]
     LK_TENSIONRELAX: [0, 5],
     SM_RECOVERY: [0, 6],
   },
+  soullinker: {
+    // Peaceful Break und Mild Wind getauscht.
+    TK_HPTIME: [3, 3],
+    TK_SEVENWIND: [3, 2],
+  },
 }
