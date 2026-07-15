@@ -21,6 +21,7 @@ export function ClassSelect({ value, onChange }: Props) {
   const [active, setActive] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
 
   // Gefilterte, flache Trefferliste (für Tastatur-Navigation), nach Tier sortiert.
   const results = useMemo<JobClass[]>(() => {
@@ -56,9 +57,21 @@ export function ClassSelect({ value, onChange }: Props) {
 
   function openList() {
     setQuery('')
-    setActive(0)
+    // Auf die bereits gewählte Klasse springen (statt immer oben zu starten).
+    const sorted = CLASSES.slice().sort(
+      (a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier),
+    )
+    const idx = sorted.findIndex((c) => c.id === value)
+    setActive(idx < 0 ? 0 : idx)
     setOpen(true)
   }
+
+  // Beim Öffnen die gewählte Klasse in den sichtbaren Bereich der Liste scrollen.
+  useEffect(() => {
+    if (!open) return
+    const el = listRef.current?.querySelector<HTMLElement>('.class-option.selected')
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [open])
 
   function choose(c: JobClass | null) {
     onChange(c ? c.id : null)
@@ -122,7 +135,7 @@ export function ClassSelect({ value, onChange }: Props) {
       )}
 
       {open && (
-        <ul className="class-listbox" id="class-listbox" role="listbox">
+        <ul className="class-listbox" id="class-listbox" role="listbox" ref={listRef}>
           {results.length === 0 && (
             <li className="class-empty">Keine Klasse gefunden</li>
           )}
