@@ -78,7 +78,10 @@ export function BuildDetail() {
     <section className="build-detail">
       {dirty && (
         <div className="save-bar dirty">
-          <span className="save-state">● Ungespeicherte Änderungen</span>
+          <span className="save-state">
+            ● Ungespeicherte Änderungen
+            {!b.name.trim() && ' – Name nötig zum Speichern'}
+          </span>
           <div className="save-actions">
             <button
               type="button"
@@ -87,7 +90,16 @@ export function BuildDetail() {
             >
               Verwerfen
             </button>
-            <button type="button" onClick={saveDraft}>
+            <button
+              type="button"
+              onClick={saveDraft}
+              disabled={!b.name.trim()}
+              title={
+                b.name.trim()
+                  ? undefined
+                  : 'Bitte zuerst einen Build-Namen vergeben'
+              }
+            >
               Speichern
             </button>
           </div>
@@ -142,6 +154,7 @@ export function BuildDetail() {
             type="text"
             className="build-title"
             value={b.name}
+            placeholder="Build-Name (zum Speichern nötig)…"
             onChange={(e) => updateDraft({ name: e.target.value })}
           />
         </label>

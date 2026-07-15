@@ -105,7 +105,8 @@ function newBuild(name: string): Build {
   const ts = now()
   return {
     id: newId(),
-    name: name.trim() || 'Neuer Build',
+    name: name.trim(), // Name darf beim Anlegen leer sein; zum Speichern wird er verlangt
+
     classId: null,
     charLink: '',
     notes: '',
@@ -255,6 +256,8 @@ function reducer(state: State, action: Action): State {
     case 'saveDraft': {
       if (!state.draft || !state.dirty) return state
       const d = state.draft
+      // Ohne (nicht-leeren) Namen wird nicht gespeichert (Absicherung; UI blockt zusätzlich).
+      if (!d.name.trim()) return state
       return {
         ...state,
         // Nur Inhaltsfelder committen; groupIds/createdAt bleiben vom committeten Build.

@@ -63,7 +63,18 @@ export function BuildList() {
       cancelLabel: 'Abbrechen',
     })
     if (c === 'cancel') return false
-    if (c === 'confirm') saveDraft()
+    if (c === 'confirm') {
+      if (!draft?.name.trim()) {
+        await confirm({
+          title: 'Name fehlt',
+          message:
+            'Bitte zuerst einen Build-Namen vergeben, dann kann gespeichert werden.',
+          confirmLabel: 'OK',
+        })
+        return false
+      }
+      saveDraft()
+    }
     return true
   }
 
@@ -74,10 +85,9 @@ export function BuildList() {
 
   async function submitBuild(e: FormEvent) {
     e.preventDefault()
-    const trimmed = name.trim()
-    if (!trimmed) return
+    // Anlegen ohne Namen erlaubt (Name wird erst zum Speichern verlangt).
     if (!(await guard())) return
-    createBuild(trimmed)
+    createBuild(name)
     setName('')
   }
 
@@ -447,7 +457,7 @@ function BuildRow({
               ●{' '}
             </span>
           )}
-          {b.name}
+          {b.name.trim() || <span className="unnamed">(ohne Name)</span>}
         </span>
         <span className="build-meta">
           {getClass(b.classId)?.name ?? 'ohne Klasse'} · {b.milestones.length}{' '}

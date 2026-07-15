@@ -460,6 +460,11 @@ button.btn-danger {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.build-name .unnamed {
+  font-weight: 400;
+  font-style: italic;
+  opacity: 0.5;
+}
 .build-meta {
   font-size: 0.78rem;
   opacity: 0.6;
