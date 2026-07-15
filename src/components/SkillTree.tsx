@@ -53,6 +53,9 @@ const iconUrl = (id: string) =>
     ? `${import.meta.env.BASE_URL}skill-icons/${id}.png`
     : null
 
+// Universelle Voraussetzung (Jobwechsel) – bei der Hover-Hervorhebung ausgenommen, sonst zu viel Rauschen.
+const ARROW_EXCLUDE = 'NV_BASIC'
+
 interface Props {
   classId: string | null
   levels: SkillLevels
@@ -76,7 +79,30 @@ export function SkillTree({
     saveSkillView(v)
   }
   const available = useMemo(() => skillsForClass(classId), [classId])
+  const availById = useMemo(
+    () => new Map(available.map((s) => [s.id, s])),
+    [available],
+  )
   const points = skillPoints(classId, levels, earlyJobChangeLevel)
+
+  // Hover-Hervorhebung (nur Ingame-Ansicht): der gehoverte Skill + seine Beziehungen.
+  const [hovered, setHovered] = useState<string | null>(null)
+  const hoveredSkill =
+    hovered && hovered !== ARROW_EXCLUDE ? availById.get(hovered) : undefined
+
+  /** Beziehung einer Zelle zum gehoverten Skill: 'source' | 'req' (Voraussetzung von) |
+   *  'dep' (benötigt den gehoverten Skill) – mit benötigtem Level. NV_BASIC ausgenommen. */
+  function relationOf(
+    skill: SkillDef,
+  ): { rel: 'source' | 'req' | 'dep'; level: number } | null {
+    if (!hoveredSkill || skill.id === ARROW_EXCLUDE) return null
+    if (skill.id === hoveredSkill.id) return { rel: 'source', level: 0 }
+    const asReq = hoveredSkill.requires.find((r) => r.id === skill.id)
+    if (asReq) return { rel: 'req', level: asReq.level }
+    const asDep = skill.requires.find((r) => r.id === hoveredSkill.id)
+    if (asDep) return { rel: 'dep', level: asDep.level }
+    return null
+  }
 
   if (!classId) {
     return <p className="empty small">Erst eine Klasse wählen.</p>
@@ -151,9 +177,14 @@ export function SkillTree({
     const canInc = level < skill.maxLevel
     const canDec = level > 0
     const url = iconUrl(skill.id)
+    const relation = relationOf(skill)
+    const relClass = relation ? ` rel-${relation.rel}` : ''
     return (
       <div
-        className={`skill-cell${level > 0 ? ' active' : ''}`}
+        className={`skill-cell${level > 0 ? ' active' : ''}${relClass}`}
+        data-skill-id={skill.id}
+        onMouseEnter={() => setHovered(skill.id)}
+        onMouseLeave={() => setHovered((h) => (h === skill.id ? null : h))}
         title={`${displayName(skill.id, skill.name)} — ${level}/${skill.maxLevel}\nKlick: +  ·  Rechtsklick: −  ·  Strg: Max/Ganz verlernen`}
         onClick={(e) =>
           canInc && raise(skill, e.ctrlKey || e.metaKey ? skill.maxLevel : level + 1)
@@ -175,6 +206,18 @@ export function SkillTree({
         {skill.platinum && (
           <span className="cell-q" title="Platin-/Quest-Skill">
             Q
+          </span>
+        )}
+        {relation && relation.rel !== 'source' && (
+          <span
+            className={`rel-badge rel-${relation.rel}`}
+            title={
+              relation.rel === 'req'
+                ? `Voraussetzung: Level ${relation.level}`
+                : `Benötigt diesen Skill auf Level ${relation.level}`
+            }
+          >
+            {relation.level}
           </span>
         )}
       </div>
@@ -292,14 +335,17 @@ export function SkillTree({
         </div>
       </div>
 
-      {view === 'grid'
-        ? gridBuckets.map((b) => (
+      {view === 'grid' ? (
+        <div className={`skill-grid-wrap${hovered ? ' has-hover' : ''}`}>
+          {gridBuckets.map((b) => (
             <div key={b.key} className="skill-group">
               <h5>{b.header}</h5>
               {gridForSkills(b.skills)}
             </div>
-          ))
-        : [...byClass.entries()].map(([cid, skills]) => (
+          ))}
+        </div>
+      ) : (
+        [...byClass.entries()].map(([cid, skills]) => (
           <div key={cid} className="skill-group">
             <h5>{getClass(cid)?.name ?? cid}</h5>
             {[...skills]
@@ -310,7 +356,8 @@ export function SkillTree({
               )
               .map((s) => <SkillRow key={s.id} skill={s} />)}
         </div>
-      ))}
+        ))
+      )}
     </div>
   )
 }
