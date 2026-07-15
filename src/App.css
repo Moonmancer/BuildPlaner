@@ -829,9 +829,29 @@ button:disabled {
   color: var(--text-h);
 }
 .ms-levels {
-  font-size: 0.8rem;
-  opacity: 0.6;
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
   font-variant-numeric: tabular-nums;
+}
+.ms-lvl {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #8a8a99);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.ms-lvl b {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-h);
 }
 .ms-body {
   padding: 4px 14px 16px;

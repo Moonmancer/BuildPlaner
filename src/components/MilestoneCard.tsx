@@ -69,7 +69,12 @@ export function MilestoneCard({
         </span>
         <span className="ms-label">{m.label || 'Unbenannter Milestone'}</span>
         <span className="ms-levels">
-          Base {m.baseLevel} · Job {derivedJobLevel}
+          <span className="ms-lvl">
+            Base<b>{m.baseLevel}</b>
+          </span>
+          <span className="ms-lvl">
+            Job<b>{derivedJobLevel}</b>
+          </span>
         </span>
       </summary>
 
