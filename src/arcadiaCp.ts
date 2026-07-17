@@ -13,6 +13,8 @@ const NAME_TO_ID = new Map(CLASSES.map((c) => [c.name.toLowerCase(), c.id]))
 const NAME_ALIASES: Record<string, string> = {
   biochemist: 'creator',
   taekwon: 'taekwon',
+  minstrel: 'clown', // männlicher Trans-Barde (iRO-Name)
+  scholar: 'professor', // iRO-Renewal-Name
 }
 const classIdFromName = (name: string): string | undefined => {
   const key = name.trim().toLowerCase()
