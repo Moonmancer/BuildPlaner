@@ -131,7 +131,7 @@ export function BuildList() {
       await confirm({
         title: 'Import fehlgeschlagen',
         message:
-          'Kein gültiger Calculator-Link (calc.arcadia-online.org oder skills.irowiki.org).',
+          'Kein gültiger Calculator-Link und keine erkennbare Arcadia-CP-Charakterseite. Prüfe, ob Klasse und Skill-Liste im eingefügten Text enthalten sind.',
         confirmLabel: 'OK',
       })
       return
@@ -319,7 +319,7 @@ export function BuildList() {
           type="button"
           className="ghost small"
           onClick={() => setShowArcadia((v) => !v)}
-          title="Build aus einem Calculator-Link importieren (Arcadia oder irowiki)"
+          title="Build importieren: Calculator-Link (Arcadia/irowiki) oder Arcadia-CP-Charakterseite (Text einfügen)"
         >
           ⚔ Calc-Link
         </button>
@@ -333,13 +333,13 @@ export function BuildList() {
       </div>
 
       {showArcadia && (
-        <form className="new-build" onSubmit={submitArcadia}>
-          <input
-            type="text"
+        <form className="new-build arcadia-import" onSubmit={submitArcadia}>
+          <textarea
             value={arcadiaUrl}
-            placeholder="Calculator-Link (Arcadia/irowiki) einfügen…"
+            placeholder="Calculator-Link (Arcadia/irowiki) ODER Arcadia-CP-Charakterseite hier einfügen…"
             onChange={(e) => setArcadiaUrl(e.target.value)}
-            aria-label="Calculator-Link"
+            aria-label="Calculator-Link oder Charakterseiten-Text"
+            rows={3}
             autoFocus
           />
           <button type="submit">Import</button>

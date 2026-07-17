@@ -5,11 +5,16 @@ import type { Build } from './types'
 import { decodeArcadiaToBuild } from './arcadia'
 import { decodeIrowikiToBuild } from './irowiki'
 import { decodeHimeyashaToBuild } from './himeyasha'
+import { decodeArcadiaCpToBuild } from './arcadiaCp'
 
-/** Dekodiert einen beliebigen unterstützten Calculator-Link. Null, wenn keiner passt. */
+/** Dekodiert einen Calculator-Link ODER den eingefügten Arcadia-CP-Charakterseiten-Text.
+ *  Null, wenn nichts passt. */
 export function decodeCalcUrl(input: string): Build | null {
   const s = input.trim()
   if (!s) return null
+  // Eingefügter CP-Charakterseiten-Text (kein Link): zuerst versuchen.
+  const cp = decodeArcadiaCpToBuild(s)
+  if (cp) return cp
   // himeyasha-Sim (gleicher Codec) unter zwei Hosts: irowiki.org/~himeyasha/skill7
   // und oldskillsim.irowiki.org. Beide als <slug>.html?<code>.
   if (/~himeyasha|skill7\/|oldskillsim/.test(s)) {

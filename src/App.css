@@ -944,6 +944,17 @@ button:disabled {
   color: #e5484d;
   font-weight: 600;
 }
+/* Import-Textfeld (Calc-Link ODER Arcadia-CP-Charakterseite). */
+.arcadia-import {
+  flex-direction: column;
+  align-items: stretch;
+}
+.arcadia-import textarea {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+  min-height: 3.2em;
+}
 /* Leih-Hinweis am First-Topf (2nd-Job-Punkte für 1st-Class-Skills). Erbt Rot, wenn der
    Eltern-Span .over-text trägt (kein Rest zum Leihen). */
 .skill-budgets .ms-borrow {
