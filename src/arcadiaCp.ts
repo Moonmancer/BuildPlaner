@@ -9,6 +9,15 @@ import { skillsForClass } from './ro/skills'
 
 // Klassenname (wie im CP) -> Klassen-ID. Case-insensitiv über die Registry.
 const NAME_TO_ID = new Map(CLASSES.map((c) => [c.name.toLowerCase(), c.id]))
+// Abweichende Klassennamen im Arcadia-CP (klassische kRO-Namen) -> unsere Klassen-ID.
+const NAME_ALIASES: Record<string, string> = {
+  biochemist: 'creator',
+  taekwon: 'taekwon',
+}
+const classIdFromName = (name: string): string | undefined => {
+  const key = name.trim().toLowerCase()
+  return NAME_TO_ID.get(key) ?? NAME_ALIASES[key]
+}
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
 
@@ -21,7 +30,7 @@ export function decodeArcadiaCpToBuild(input: string): Build | null {
 
   const className = text.match(/^Job Class\s+(.+?)\s*$/m)?.[1]?.trim()
   if (!className) return null
-  const classId = NAME_TO_ID.get(className.toLowerCase())
+  const classId = classIdFromName(className)
   if (!classId) return null
 
   const lvl = text.match(/^Level\s+(\d+)\s*\/\s*(\d+)/m)
