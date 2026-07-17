@@ -47,6 +47,7 @@ export const CLASS_ICON: Record<string, IconCode> = {
 
 /** Anordnung im Auswahl-Modal (Reihen à 5 Spalten; null = leere Zelle für Spaltenausrichtung). */
 export const CLASS_LAYOUT: (string | null)[][] = [
+  [null, null, 'novice', null, null],
   ['lordknight', 'knight', 'swordsman', 'crusader', 'paladin'],
   ['highpriest', 'priest', 'acolyte', 'monk', 'champion'],
   ['highwizard', 'wizard', 'mage', 'sage', 'professor'],
@@ -55,7 +56,7 @@ export const CLASS_LAYOUT: (string | null)[][] = [
   ['sniper', 'hunter', 'archer', 'bard', 'clown'],
   [null, null, null, 'dancer', 'gypsy'],
   [null, 'stargladiator', 'taekwon', 'soullinker', null],
-  ['gunslinger', 'supernovice', 'ninja', 'novice'],
+  [null, 'gunslinger', 'supernovice', 'ninja', null],
 ]
 
 /** Alle zu spiegelnden himeyasha-Bildcodes (für das Download-Script). */
