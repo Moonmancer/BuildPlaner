@@ -1007,7 +1007,74 @@ button:disabled {
 
 /* ---------- Klassen-Combobox ---------- */
 .class-select {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+.class-select-field {
   position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.class-picker-btn {
+  flex-shrink: 0;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-soft, var(--bg));
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.class-picker-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Klassen-Auswahl-Modal */
+.modal.class-picker {
+  max-width: min(680px, 94vw);
+}
+.class-picker-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+.class-picker-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.class-tile,
+.class-tile-empty {
+  min-height: 92px;
+}
+.class-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 6px 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-soft, var(--bg));
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.72rem;
+  text-align: center;
+}
+.class-tile img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.class-tile:hover {
+  border-color: var(--accent);
+  color: var(--accent-text, var(--text-h));
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 .class-clear {
   position: absolute;

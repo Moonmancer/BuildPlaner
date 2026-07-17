@@ -7,6 +7,7 @@ import {
   type ClassTier,
   type JobClass,
 } from '../ro/classes'
+import { ClassPickerModal } from './ClassPickerModal'
 
 interface Props {
   value: string | null
@@ -17,6 +18,7 @@ interface Props {
 export function ClassSelect({ value, onChange }: Props) {
   const selected = getClass(value)
   const [open, setOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -103,6 +105,7 @@ export function ClassSelect({ value, onChange }: Props) {
 
   return (
     <div className="class-select" ref={rootRef}>
+      <div className="class-select-field">
       <input
         ref={inputRef}
         type="text"
@@ -167,6 +170,24 @@ export function ClassSelect({ value, onChange }: Props) {
           ))}
         </ul>
       )}
+      </div>
+      <button
+        type="button"
+        className="class-picker-btn"
+        title="Klasse aus Bildern wählen"
+        aria-label="Klasse aus Bildern wählen"
+        onClick={() => setPickerOpen(true)}
+      >
+        ▦
+      </button>
+      <ClassPickerModal
+        open={pickerOpen}
+        onSelect={(id) => {
+          onChange(id)
+          setPickerOpen(false)
+        }}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   )
 }
