@@ -54,7 +54,7 @@ export const CLASS_LAYOUT: (string | null)[][] = [
   ['assassincross', 'assassin', 'thief', 'rogue', 'stalker'],
   ['sniper', 'hunter', 'archer', 'bard', 'clown'],
   [null, null, null, 'dancer', 'gypsy'],
-  ['stargladiator', 'taekwon', 'soullinker'],
+  [null, 'stargladiator', 'taekwon', 'soullinker', null],
   ['gunslinger', 'supernovice', 'ninja', 'novice'],
 ]
 
